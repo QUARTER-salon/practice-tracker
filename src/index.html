@@ -7,26 +7,29 @@
   <?!= include('styles'); ?>
 </head>
 <body>
+  <!-- ★★★ 非表示の遷移用リンクを追加 ★★★ -->
+  <a id="redirect-link" href="#" style="display: none;"></a> 
+
   <div class="container">
     <header>
       <h1>美容師練習管理アプリ</h1>
     </header>
-    
+
     <main>
       <div class="login-container">
         <h2>ログイン</h2>
-        
+
         <!-- エラーメッセージ表示エリア -->
         <div id="error-message" class="error-message <?= redirectMessage ? 'visible' : '' ?>">
           <?= redirectMessage || '' ?>
         </div>
-        
+
         <!-- ログイン方法選択タブ -->
         <div class="login-tabs">
           <button id="google-tab" class="tab-btn active">Google認証</button>
           <button id="password-tab" class="tab-btn">ID/パスワード</button>
         </div>
-        
+
         <!-- Google認証ログインエリア -->
         <div id="google-login" class="login-panel active">
           <p>Googleアカウントでログインします。</p>
@@ -35,7 +38,7 @@
             <i class="icon-google"></i>Googleでログイン
           </button>
         </div>
-        
+
         <!-- ID/パスワードログインエリア -->
         <div id="password-login" class="login-panel">
           <form id="login-form">
@@ -50,7 +53,7 @@
             <button type="submit" class="btn btn-primary">ログイン</button>
           </form>
         </div>
-        
+
         <!-- ログイン中の表示 -->
         <div id="loading" class="loading-panel">
           <div class="loading-spinner"></div>
@@ -58,15 +61,14 @@
         </div>
       </div>
     </main>
-    
+
     <footer>
       <p>© 2025 美容師練習管理アプリ</p>
     </footer>
   </div>
-  
+
   <?!= include('script'); ?>
   <script>
-    // ログイン画面固有のスクリプト
     document.addEventListener('DOMContentLoaded', function() {
       // --- 要素取得 ---
       const googleTab = document.getElementById('google-tab');
@@ -87,7 +89,7 @@
             passwordLogin.classList.remove('active');
             clearError(); // タブ切り替え時にエラーを消す
           });
-          
+
           passwordTab.addEventListener('click', function() {
             passwordTab.classList.add('active');
             googleTab.classList.remove('active');
@@ -98,7 +100,7 @@
       } else {
           console.error("ログインタブ関連の要素が見つかりません。");
       }
-      
+
       // --- Googleログインボタン ---
       if (googleLoginBtn) {
           googleLoginBtn.addEventListener('click', function() {
@@ -112,16 +114,16 @@
       } else {
           console.error("Googleログインボタンが見つかりません。");
       }
-      
+
       // --- ID/パスワードログインフォーム ---
       if (loginForm) {
           loginForm.addEventListener('submit', function(event) {
             event.preventDefault();
             clearError(); // ログイン試行時にエラーを消す
-            
+
             const employeeIdInput = document.getElementById('employee-id');
             const passwordInput = document.getElementById('password');
-            
+
             if(!employeeIdInput || !passwordInput) {
                 console.error("社員番号またはパスワードの入力フィールドが見つかりません。");
                 showError('内部エラーが発生しました。');
@@ -130,12 +132,12 @@
 
             const employeeId = employeeIdInput.value;
             const password = passwordInput.value;
-            
+
             if (!employeeId || !password) {
               showError('社員番号とパスワードを入力してください');
               return;
             }
-            
+
             showLoading(true);
             google.script.run
               .withSuccessHandler(handleLoginSuccess)
@@ -145,7 +147,7 @@
       } else {
            console.error("ログインフォームが見つかりません。");
       }
-      
+
       // --- 共通関数 ---
 
       // ログイン成功時の処理 ★★★ 修正箇所 ★★★
@@ -153,17 +155,41 @@
         logToServer('handleLoginSuccess: 開始, success=' + result?.success); // GASログ
         if (result && result.success) {
           logToServer('handleLoginSuccess: ログイン成功、?page=app へ遷移します'); // GASログ
-          // window.location.href = '?page=app'; // 古い方法
-          // 現在の履歴を置き換え、完全なURLで遷移する
-          window.location.replace('<?= ScriptApp.getService().getUrl() ?>?page=app'); 
+
+          // --- 新しい遷移方法 (<a>タグクリック) ---
+          try {
+              const redirectLink = document.getElementById('redirect-link');
+              if (redirectLink) {
+                  // 遷移先のURLを生成 (GASのベースURL + ?page=app)
+                  const targetUrl = '<?= ScriptApp.getService().getUrl() ?>?page=app';
+                  logToServer('handleLoginSuccess: 遷移先URL設定: ' + targetUrl); 
+                  redirectLink.href = targetUrl;
+                  redirectLink.click(); // リンクをクリックして遷移を試みる
+                  logToServer('handleLoginSuccess: リダイレクトリンククリック実行'); 
+                  // 注: click()直後にshowLoading(false)を呼ぶと遷移が中断される可能性があるので注意
+              } else {
+                  console.error("リダイレクト用リンク要素が見つかりません。");
+                  logToServer('handleLoginSuccess: redirect-link 要素なし'); 
+                  showError('画面遷移に失敗しました。ページを再読み込みしてください。');
+                  showLoading(false); // ローディング解除
+              }
+          } catch (redirectError) {
+               console.error("リダイレクトエラー:", redirectError);
+               logToServer('handleLoginSuccess: リダイレクト処理エラー - ' + redirectError.toString()); 
+               showError('画面遷移中にエラーが発生しました。');
+               showLoading(false); // ローディング解除
+          }
+          // --- ここまで変更 ---
+
         } else {
+          // ログイン失敗時の処理
           const message = result?.message || 'ログインに失敗しました。';
           logToServer('handleLoginSuccess: ログイン失敗 - ' + message); // GASログ
           showLoading(false);
           showError(message);
         }
       }
-      
+
       // ログインエラー時の処理
       function handleLoginError(error) {
         const errorMessage = error ? (error.message || error.toString()) : '不明なエラー';
@@ -172,7 +198,7 @@
         showLoading(false);
         showError('ログイン処理中にエラーが発生しました: ' + errorMessage);
       }
-      
+
       // エラーメッセージの表示
       function showError(message) {
         if (errorMessageDiv) {
@@ -182,7 +208,7 @@
             console.error("エラーメッセージ表示要素が見つかりません:", message);
         }
       }
-      
+
       // エラーメッセージのクリア
       function clearError() {
           if (errorMessageDiv) {
@@ -190,7 +216,7 @@
               errorMessageDiv.classList.remove('visible');
           }
       }
-      
+
       // ローディング表示の切り替え
       function showLoading(show) {
         if (!loading || !googleLogin || !passwordLogin || !googleTab) {
@@ -218,8 +244,6 @@
        function logToServer(message) {
           // console.log("[Client Log]", message); // ブラウザコンソールにも出す場合
           google.script.run
-              // .withSuccessHandler(() => {}) // ログ出力成功/失敗ハンドリングは通常不要
-              // .withFailureHandler(err => console.error("logToServer failed:", err)) 
               .logMessage(message); // サーバー側 (Utils.js) にログ出力関数を用意
        }
     });
