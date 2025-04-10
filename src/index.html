@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>美容師練習管理アプリ - ログイン</title>
+  <?!= include('styles'); ?>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>美容師練習管理アプリ</h1>
+    </header>
+    
+    <main>
+      <div class="login-container">
+        <h2>ログイン</h2>
+        
+        <!-- エラーメッセージ表示エリア -->
+        <div id="error-message" class="error-message <?= redirectMessage ? 'visible' : '' ?>">
+          <?= redirectMessage || '' ?>
+        </div>
+        
+        <!-- ログイン方法選択タブ -->
+        <div class="login-tabs">
+          <button id="google-tab" class="tab-btn active">Google認証</button>
+          <button id="password-tab" class="tab-btn">ID/パスワード</button>
+        </div>
+        
+        <!-- Google認証ログインエリア -->
+        <div id="google-login" class="login-panel active">
+          <p>Googleアカウントでログインします。</p>
+          <p>※スタッフマスターシートに登録されているメールアドレスと一致している必要があります。</p>
+          <button id="google-login-btn" class="btn btn-primary">
+            <i class="icon-google"></i>Googleでログイン
+          </button>
+        </div>
+        
+        <!-- ID/パスワードログインエリア -->
+        <div id="password-login" class="login-panel">
+          <form id="login-form">
+            <div class="form-group">
+              <label for="employee-id">社員番号</label>
+              <input type="text" id="employee-id" name="employeeId" required>
+            </div>
+            <div class="form-group">
+              <label for="password">パスワード</label>
+              <input type="password" id="password" name="password" required>
+            </div>
+            <button type="submit" class="btn btn-primary">ログイン</button>
+          </form>
+        </div>
+        
+        <!-- ログイン中の表示 -->
+        <div id="loading" class="loading-panel">
+          <div class="loading-spinner"></div>
+          <p>ログイン処理中...</p>
+        </div>
+      </div>
+    </main>
+    
+    <footer>
+      <p>&copy; 2025 美容師練習管理アプリ</p>
+    </footer>
+  </div>
+  
+  <?!= include('script'); ?>
+  <script>
+    // ログイン画面固有のスクリプト
+    document.addEventListener('DOMContentLoaded', function() {
+      // タブ切り替え
+      const googleTab = document.getElementById('google-tab');
+      const passwordTab = document.getElementById('password-tab');
+      const googleLogin = document.getElementById('google-login');
+      const passwordLogin = document.getElementById('password-login');
+      
+      googleTab.addEventListener('click', function() {
+        googleTab.classList.add('active');
+        passwordTab.classList.remove('active');
+        googleLogin.classList.add('active');
+        passwordLogin.classList.remove('active');
+      });
+      
+      passwordTab.addEventListener('click', function() {
+        passwordTab.classList.add('active');
+        googleTab.classList.remove('active');
+        passwordLogin.classList.add('active');
+        googleLogin.classList.remove('active');
+      });
+      
+      // Googleログインボタン
+      const googleLoginBtn = document.getElementById('google-login-btn');
+      googleLoginBtn.addEventListener('click', function() {
+        showLoading(true);
+        google.script.run
+          .withSuccessHandler(handleLoginSuccess)
+          .withFailureHandler(handleLoginError)
+          .loginWithGoogle();
+      });
+      
+      // ID/パスワードログイン
+      const loginForm = document.getElementById('login-form');
+      loginForm.addEventListener('submit', function(event) {
+        event.preventDefault();
+        
+        const employeeId = document.getElementById('employee-id').value;
+        const password = document.getElementById('password').value;
+        
+        if (!employeeId || !password) {
+          showError('社員番号とパスワードを入力してください');
+          return;
+        }
+        
+        showLoading(true);
+        google.script.run
+          .withSuccessHandler(handleLoginSuccess)
+          .withFailureHandler(handleLoginError)
+          .loginWithCredentials(employeeId, password);
+      });
+      
+      // ログイン成功時の処理
+      function handleLoginSuccess(result) {
+        if (result.success) {
+          // ログイン成功時はアプリ画面に遷移
+          window.location.href = '?page=app';
+        } else {
+          // サーバーからエラーメッセージが返ってきた場合
+          showLoading(false);
+          showError(result.message);
+        }
+      }
+      
+      // ログインエラー時の処理
+      function handleLoginError(error) {
+        showLoading(false);
+        showError('ログイン処理中にエラーが発生しました: ' + error.message);
+      }
+      
+      // エラーメッセージの表示
+      function showError(message) {
+        const errorMessage = document.getElementById('error-message');
+        errorMessage.textContent = message;
+        errorMessage.classList.add('visible');
+      }
+      
+      // ローディング表示の切り替え
+      function showLoading(show) {
+        const loading = document.getElementById('loading');
+        const googleLogin = document.getElementById('google-login');
+        const passwordLogin = document.getElementById('password-login');
+        
+        if (show) {
+          loading.style.display = 'flex';
+          googleLogin.style.display = 'none';
+          passwordLogin.style.display = 'none';
+        } else {
+          loading.style.display = 'none';
+          if (googleTab.classList.contains('active')) {
+            googleLogin.style.display = 'block';
+          } else {
+            passwordLogin.style.display = 'block';
+          }
+        }
+      }
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>美容師練習管理アプリ</title>
+  <?!= include('styles'); ?>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>美容師練習管理アプリ</h1>
+      <div class="user-info">
+        <span id="user-name"><?= userInfo.名前 ?></span>
+        <span id="user-store"><?= userInfo.店舗 ?></span>
+        <button id="logout-btn" class="btn btn-small">ログアウト</button>
+      </div>
+    </header>
+    
+    <main>
+      <!-- 練習記録入力フォーム -->
+      <section class="practice-form">
+        <h2>練習記録入力</h2>
+        
+        <!-- メッセージ表示エリア -->
+        <div id="message" class="message"></div>
+        
+        <form id="practice-form">
+          <!-- ユーザー情報（表示のみ、編集不可） -->
+          <div class="form-row">
+            <div class="form-group">
+              <label>店舗</label>
+              <div class="form-display"><?= userInfo.店舗 ?></div>
+              <input type="hidden" id="store" name="store" value="<?= userInfo.店舗 ?>">
+            </div>
+            
+            <div class="form-group">
+              <label>役職</label>
+              <div class="form-display"><?= userInfo.Role ?></div>
+              <input type="hidden" id="role" name="role" value="<?= userInfo.Role ?>">
+            </div>
+            
+            <div class="form-group">
+              <label>名前</label>
+              <div class="form-display"><?= userInfo.名前 ?></div>
+              <input type="hidden" id="name" name="name" value="<?= userInfo.名前 ?>">
+            </div>
+          </div>
+          
+          <!-- トレーナー選択 -->
+          <div class="form-row">
+            <div class="form-group">
+              <label for="trainer">トレーナー <span class="required">*</span></label>
+              <select id="trainer" name="trainer" required>
+                <option value="">選択してください</option>
+                <option value="自主練">自主練</option>
+                <option value="その他">その他</option>
+                <option value="他店舗トレーナー">他店舗トレーナー</option>
+                <!-- JSで動的にトレーナーリストを表示 -->
+              </select>
+            </div>
+            
+            <!-- 他店舗トレーナー選択時に表示 -->
+            <div id="other-store-trainers-container" class="form-group hidden">
+              <label for="other-store-trainer">他店舗トレーナー <span class="required">*</span></label>
+              <select id="other-store-trainer" name="other-store-trainer">
+                <option value="">選択してください</option>
+                <!-- JSで動的に他店舗トレーナーリストを表示 -->
+              </select>
+            </div>
+          </div>
+          
+          <!-- 練習日・時間・回数 -->
+          <div class="form-row">
+            <div class="form-group">
+              <label for="practice-date">練習日 <span class="required">*</span></label>
+              <input type="date" id="practice-date" name="practiceDate" required>
+            </div>
+            
+            <div class="form-group">
+              <label for="practice-time">練習時間 <span class="required">*</span></label>
+              <select id="practice-time" name="practiceTime" required>
+                <option value="">選択してください</option>
+                <option value="0">0時間</option>
+                <option value="0.5">0.5時間</option>
+                <option value="1">1時間</option>
+                <option value="1.5">1.5時間</option>
+                <option value="2">2時間</option>
+                <option value="2.5">2.5時間</option>
+                <option value="3">3時間</option>
+                <option value="3.5">3.5時間</option>
+                <option value="4">4時間</option>
+                <option value="4.5">4.5時間</option>
+                <option value="5">5時間</option>
+                <option value="5.5">5.5時間</option>
+                <option value="6">6時間</option>
+                <option value="6.5">6.5時間</option>
+                <option value="7">7時間</option>
+                <option value="7.5">7.5時間</option>
+                <option value="8">8時間</option>
+                <option value="8.5">8.5時間</option>
+                <option value="9">9時間</option>
+                <option value="9.5">9.5時間</option>
+                <option value="10">10時間</option>
+                <option value="10.5">10.5時間</option>
+                <option value="11">11時間</option>
+                <option value="11.5">11.5時間</option>
+                <option value="12">12時間</option>
+              </select>
+            </div>
+            
+            <div class="form-group">
+              <label for="practice-count">練習回数 <span class="required">*</span></label>
+              <select id="practice-count" name="practiceCount" required>
+                <option value="">選択してください</option>
+                <option value="0">0回</option>
+                <option value="1">1回</option>
+                <option value="2">2回</option>
+                <option value="3">3回</option>
+                <option value="4">4回</option>
+                <option value="5">5回</option>
+                <option value="6">6回</option>
+                <option value="7">7回</option>
+                <option value="8">8回</option>
+              </select>
+            </div>
+          </div>
+          
+          <!-- 技術カテゴリーと詳細技術項目 -->
+          <div class="form-row">
+            <div class="form-group">
+              <label for="tech-category">技術カテゴリー <span class="required">*</span></label>
+              <select id="tech-category" name="techCategory" required>
+                <option value="">選択してください</option>
+                <!-- JSで動的にカテゴリーリストを表示 -->
+              </select>
+            </div>
+            
+            <div class="form-group">
+              <label for="tech-detail">詳細技術項目 <span class="required">*</span></label>
+              <select id="tech-detail" name="techDetail" required disabled>
+                <option value="">カテゴリーを選択してください</option>
+                <!-- JSで動的に詳細項目リストを表示 -->
+              </select>
+            </div>
+          </div>
+          
+          <!-- 新品ウィッグ使用数と評価 -->
+          <div class="form-row">
+            <div class="form-group">
+              <label for="new-wig-count">新品ウィッグ使用数</label>
+              <select id="new-wig-count" name="newWigCount">
+                <option value="0" selected>0個</option>
+                <option value="1">1個</option>
+                <option value="2">2個</option>
+                <option value="3">3個</option>
+                <option value="4">4個</option>
+                <option value="5">5個</option>
+              </select>
+            </div>
+            
+            <div class="form-group" id="evaluation-container">
+              <label for="evaluation">評価 <span class="required">*</span></label>
+              <select id="evaluation" name="evaluation" required>
+                <option value="">選択してください</option>
+                <option value="1">1 (不合格)</option>
+                <option value="2">2 (不合格)</option>
+                <option value="3">3 (不合格)</option>
+                <option value="4">4 (不合格)</option>
+                <option value="5">5 (不合格)</option>
+                <option value="6">6 (不合格)</option>
+                <option value="7">7 (合格)</option>
+                <option value="8">8 (合格)</option>
+                <option value="9">9 (合格)</option>
+                <option value="10">10 (合格)</option>
+              </select>
+            </div>
+          </div>
+          
+          <!-- その他詳細 -->
+          <div class="form-group">
+            <label for="other-details">その他詳細<br><span class="note">※複数トレーナーの場合は代表以外のトレーナー名を記載してください</span></label>
+            <textarea id="other-details" name="otherDetails" rows="3"></textarea>
+          </div>
+          
+          <!-- 送信ボタン -->
+          <div class="form-actions">
+            <button type="submit" id="submit-btn" class="btn btn-primary">記録する</button>
+            <button type="reset" class="btn">クリア</button>
+          </div>
+        </form>
+      </section>
+      
+      <!-- 操作説明 -->
+      <section class="help-section">
+        <h3>操作説明</h3>
+        <ul>
+          <li>必須項目（<span class="required">*</span>）はすべて入力してください。</li>
+          <li>トレーナーは1名のみ選択してください。複数トレーナーが関わった場合は、代表者1名を選択し、他のトレーナー名は「その他詳細」に記載してください。</li>
+          <li>詳細技術項目は1回の記録につき1項目のみ選択できます。複数の項目を練習した場合は、項目ごとに別々に記録してください。</li>
+          <li>新品ウィッグを使用した場合は、使用数を入力してください。在庫数が自動的に更新されます。</li>
+          <li>「自主練」を選択した場合は、評価の入力は不要です。</li>
+        </ul>
+      </section>
+    </main>
+    
+    <footer>
+      <p>&copy; 2025 美容師練習管理アプリ</p>
+    </footer>
+  </div>
+  
+  <?!= include('styles'); ?>
+  <?!= include('script'); ?>
+  <?!= include('app_script'); ?>
+</body>
+</html>

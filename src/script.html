@@ -1,0 +1,124 @@
+<script>
+/**
+ * 美容師練習管理アプリ - 共通JavaScript
+ */
+
+// DOMが読み込まれたことを確認する関数
+function domReady(fn) {
+  if (document.readyState !== 'loading') {
+    fn();
+  } else {
+    document.addEventListener('DOMContentLoaded', fn);
+  }
+}
+
+// メッセージを表示する関数
+function showMessage(message, type, elementId = 'message') {
+  const messageElement = document.getElementById(elementId);
+  if (!messageElement) return;
+  
+  messageElement.textContent = message;
+  messageElement.className = 'message ' + type;
+  
+  // 3秒後に成功メッセージを消す（エラーメッセージは残す）
+  if (type === 'success') {
+    setTimeout(function() {
+      messageElement.textContent = '';
+      messageElement.className = 'message';
+    }, 3000);
+  }
+}
+
+// 日付をYYYY-MM-DD形式に変換する関数
+function formatDate(date) {
+  if (!date) return '';
+  
+  const d = new Date(date);
+  const year = d.getFullYear();
+  const month = ('0' + (d.getMonth() + 1)).slice(-2);
+  const day = ('0' + d.getDate()).slice(-2);
+  
+  return `${year}-${month}-${day}`;
+}
+
+// 日付をYYYY年MM月DD日形式に変換する関数
+function formatDateJP(date) {
+  if (!date) return '';
+  
+  const d = new Date(date);
+  const year = d.getFullYear();
+  const month = d.getMonth() + 1;
+  const day = d.getDate();
+  
+  return `${year}年${month}月${day}日`;
+}
+
+// エラーハンドリング用の共通関数
+function handleError(error, message) {
+  console.error(error);
+  showMessage(message + ': ' + error.toString(), 'error');
+}
+
+// フォームデータを収集する関数
+function collectFormData(formElement) {
+  const formData = {};
+  
+  // 入力フィールド、テキストエリア、選択フィールドの処理
+  Array.from(formElement.querySelectorAll('input:not([type="checkbox"]):not([type="radio"]), textarea, select')).forEach(element => {
+    if (element.name) {
+      formData[element.name] = element.value;
+    }
+  });
+  
+  // チェックボックスの処理
+  const checkboxGroups = {};
+  Array.from(formElement.querySelectorAll('input[type="checkbox"]')).forEach(element => {
+    if (element.name) {
+      if (!checkboxGroups[element.name]) {
+        checkboxGroups[element.name] = [];
+      }
+      
+      if (element.checked) {
+        checkboxGroups[element.name].push(element.value);
+      }
+    }
+  });
+  
+  // チェックボックスグループをフォームデータに追加
+  Object.keys(checkboxGroups).forEach(name => {
+    formData[name] = checkboxGroups[name];
+  });
+  
+  // ラジオボタンの処理
+  Array.from(formElement.querySelectorAll('input[type="radio"]:checked')).forEach(element => {
+    if (element.name) {
+      formData[element.name] = element.value;
+    }
+  });
+  
+  return formData;
+}
+
+// スロットリング関数（イベントの頻度を制限）
+function throttle(func, delay) {
+  let lastCall = 0;
+  return function(...args) {
+    const now = new Date().getTime();
+    if (now - lastCall >= delay) {
+      lastCall = now;
+      return func.apply(this, args);
+    }
+  };
+}
+
+// デバウンス関数（連続したイベントを1回にまとめる）
+function debounce(func, delay) {
+  let timeoutId;
+  return function(...args) {
+    clearTimeout(timeoutId);
+    timeoutId = setTimeout(() => {
+      func.apply(this, args);
+    }, delay);
+  };
+}
+</script>

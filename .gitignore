@@ -1,0 +1,12 @@
+# clasp 設定ファイル (環境依存)
+.clasp.json
+
+# Node.js モジュール (もし使う場合)
+node_modules/
+
+# OS 生成ファイル
+.DS_Store
+Thumbs.db
+
+# VS Code 設定
+.vscode/

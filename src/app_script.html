@@ -1,0 +1,348 @@
+<script>
+/**
+ * 美容師練習管理アプリ - アプリ画面のJavaScript
+ */
+document.addEventListener('DOMContentLoaded', function() {
+   console.log('app_script.html: DOMContentLoaded イベント発生');
+  // 日付フィールドに今日の日付をセット
+  const today = new Date();
+  const formattedDate = today.toISOString().substr(0, 10); // YYYY-MM-DD形式
+  document.getElementById('practice-date').value = formattedDate;
+  
+  // トレーナー一覧を取得
+  loadTrainers();
+  
+  // 技術カテゴリー一覧を取得
+  loadTechCategories();
+  
+  // トレーナー選択時の処理
+  const trainerSelect = document.getElementById('trainer');
+  trainerSelect.addEventListener('change', handleTrainerChange);
+  
+  // 他店舗トレーナー選択時の処理
+  const otherStoreTrainerSelect = document.getElementById('other-store-trainer');
+  otherStoreTrainerSelect.addEventListener('change', function() {
+    if (this.value) {
+      trainerSelect.value = this.value;
+    }
+  });
+  
+  // 技術カテゴリー選択時の処理
+  const techCategorySelect = document.getElementById('tech-category');
+  techCategorySelect.addEventListener('change', handleTechCategoryChange);
+  
+  // フォーム送信時の処理
+  const practiceForm = document.getElementById('practice-form');
+  practiceForm.addEventListener('submit', handleFormSubmit);
+  
+  // ログアウトボタンの処理
+  const logoutBtn = document.getElementById('logout-btn');
+  logoutBtn.addEventListener('click', handleLogout);
+  
+  // トレーナー選択に応じて評価表示を制御
+  function handleTrainerChange() {
+    const trainerValue = trainerSelect.value;
+    const otherStoreTrainersContainer = document.getElementById('other-store-trainers-container');
+    const evaluationContainer = document.getElementById('evaluation-container');
+    const evaluationSelect = document.getElementById('evaluation');
+    
+    // 他店舗トレーナー選択の表示制御
+    if (trainerValue === '他店舗トレーナー') {
+      otherStoreTrainersContainer.classList.remove('hidden');
+      otherStoreTrainerSelect.required = true;
+    } else {
+      otherStoreTrainersContainer.classList.add('hidden');
+      otherStoreTrainerSelect.required = false;
+      otherStoreTrainerSelect.value = '';
+    }
+    
+    // 評価欄の表示制御
+    if (trainerValue === '自主練') {
+      evaluationContainer.classList.add('hidden');
+      evaluationSelect.required = false;
+      evaluationSelect.value = '';
+    } else {
+      evaluationContainer.classList.remove('hidden');
+      evaluationSelect.required = true;
+    }
+  }
+  
+  // 技術カテゴリー選択に応じて詳細項目を制御
+  function handleTechCategoryChange() {
+    const category = techCategorySelect.value;
+    const techDetailSelect = document.getElementById('tech-detail');
+    
+    if (category) {
+      // 詳細技術項目を取得
+      google.script.run
+        .withSuccessHandler(function(result) {
+          if (result.success) {
+            // 詳細項目をリセット
+            techDetailSelect.innerHTML = '<option value="">選択してください</option>';
+            
+            // 詳細項目を追加
+            result.data.forEach(function(detail) {
+              const option = document.createElement('option');
+              option.value = detail;
+              option.textContent = detail;
+              techDetailSelect.appendChild(option);
+            });
+            
+            // 有効化
+            techDetailSelect.disabled = false;
+          } else {
+            showMessage(result.message, 'error');
+            techDetailSelect.disabled = true;
+          }
+        })
+        .withFailureHandler(function(error) {
+          showMessage('詳細技術項目の取得に失敗しました: ' + error, 'error');
+          techDetailSelect.disabled = true;
+        })
+        .getTechDetails(category);
+    } else {
+      // カテゴリーが選択されていない場合は詳細項目を無効化
+      techDetailSelect.innerHTML = '<option value="">カテゴリーを選択してください</option>';
+      techDetailSelect.disabled = true;
+    }
+  }
+  
+  // トレーナー一覧を取得して表示
+  function loadTrainers() {
+    google.script.run
+      .withSuccessHandler(function(result) {
+        if (result.success) {
+          const trainerSelect = document.getElementById('trainer');
+          const otherStoreTrainerSelect = document.getElementById('other-store-trainer');
+          const data = result.data;
+          
+          // 固定選択肢の追加（すでにHTMLで設定済み）
+          
+          // 同一店舗トレーナーの追加
+          data.userStoreTrainers.forEach(function(trainer) {
+            const option = document.createElement('option');
+            option.value = trainer.name;
+            option.textContent = trainer.name;
+            trainerSelect.appendChild(option);
+          });
+          
+          // 他店舗トレーナーの追加
+          data.otherStoreTrainers.forEach(function(trainer) {
+            const option = document.createElement('option');
+            option.value = trainer.name;
+            option.textContent = trainer.name + ' (' + trainer.store + ')';
+            otherStoreTrainerSelect.appendChild(option);
+          });
+        } else {
+          showMessage(result.message, 'error');
+        }
+      })
+      .withFailureHandler(function(error) {
+        showMessage('トレーナー情報の取得に失敗しました: ' + error, 'error');
+      })
+      .getTrainers();
+  }
+  
+  // 技術カテゴリー一覧を取得して表示
+  function loadTechCategories() {
+    google.script.run
+      .withSuccessHandler(function(result) {
+        if (result.success) {
+          const techCategorySelect = document.getElementById('tech-category');
+          
+          // カテゴリーを追加
+          result.data.forEach(function(category) {
+            const option = document.createElement('option');
+            option.value = category;
+            option.textContent = category;
+            techCategorySelect.appendChild(option);
+          });
+        } else {
+          showMessage(result.message, 'error');
+        }
+      })
+      .withFailureHandler(function(error) {
+        showMessage('技術カテゴリーの取得に失敗しました: ' + error, 'error');
+      })
+      .getTechCategories();
+  }
+  
+  // フォーム送信処理
+  function handleFormSubmit(event) {
+    event.preventDefault();
+    
+    // ボタンを無効化して二重送信を防止
+    const submitBtn = document.getElementById('submit-btn');
+    submitBtn.disabled = true;
+    submitBtn.textContent = '送信中...';
+    
+    // バリデーション
+    if (!validateForm()) {
+      submitBtn.disabled = false;
+      submitBtn.textContent = '記録する';
+      return;
+    }
+    
+    // フォームデータを取得
+    const formData = {
+      trainer: getTrainerValue(),
+      practiceDate: document.getElementById('practice-date').value,
+      practiceTime: document.getElementById('practice-time').value,
+      techCategory: document.getElementById('tech-category').value,
+      techDetail: document.getElementById('tech-detail').value,
+      practiceCount: document.getElementById('practice-count').value,
+      newWigCount: document.getElementById('new-wig-count').value,
+      evaluation: document.getElementById('evaluation').value,
+      otherDetails: document.getElementById('other-details').value
+    };
+    
+    // サーバーにデータを送信
+    google.script.run
+      .withSuccessHandler(function(result) {
+        if (result.success) {
+          showMessage(result.message, 'success');
+          resetForm();
+        } else {
+          showMessage(result.message, 'error');
+        }
+        
+        // ボタンを有効化
+        submitBtn.disabled = false;
+        submitBtn.textContent = '記録する';
+      })
+      .withFailureHandler(function(error) {
+        showMessage('データの送信に失敗しました: ' + error, 'error');
+        
+        // ボタンを有効化
+        submitBtn.disabled = false;
+        submitBtn.textContent = '記録する';
+      })
+      .savePracticeRecord(formData);
+  }
+  
+  // 実際のトレーナー値を取得（他店舗トレーナー選択時の考慮）
+  function getTrainerValue() {
+    const trainerSelect = document.getElementById('trainer');
+    const otherStoreTrainerSelect = document.getElementById('other-store-trainer');
+    
+    if (trainerSelect.value === '他店舗トレーナー' && otherStoreTrainerSelect.value) {
+      return otherStoreTrainerSelect.value;
+    }
+    
+    return trainerSelect.value;
+  }
+  
+  // フォームバリデーション
+  function validateForm() {
+    const trainer = document.getElementById('trainer').value;
+    const otherStoreTrainer = document.getElementById('other-store-trainer').value;
+    const practiceDate = document.getElementById('practice-date').value;
+    const practiceTime = document.getElementById('practice-time').value;
+    const techCategory = document.getElementById('tech-category').value;
+    const techDetail = document.getElementById('tech-detail').value;
+    const practiceCount = document.getElementById('practice-count').value;
+    const evaluation = document.getElementById('evaluation').value;
+    
+    // 必須項目チェック
+    if (!trainer) {
+      showMessage('トレーナーを選択してください', 'error');
+      return false;
+    }
+    
+    if (trainer === '他店舗トレーナー' && !otherStoreTrainer) {
+      showMessage('他店舗トレーナーを選択してください', 'error');
+      return false;
+    }
+    
+    if (!practiceDate) {
+      showMessage('練習日を入力してください', 'error');
+      return false;
+    }
+    
+    if (!practiceTime) {
+      showMessage('練習時間を選択してください', 'error');
+      return false;
+    }
+    
+    if (!techCategory) {
+      showMessage('技術カテゴリーを選択してください', 'error');
+      return false;
+    }
+    
+    if (!techDetail) {
+      showMessage('詳細技術項目を選択してください', 'error');
+      return false;
+    }
+    
+    if (!practiceCount) {
+      showMessage('練習回数を選択してください', 'error');
+      return false;
+    }
+    
+    // 自主練以外は評価が必須
+    if (trainer !== '自主練' && !evaluation) {
+      showMessage('評価を選択してください', 'error');
+      return false;
+    }
+    
+    return true;
+  }
+  
+  // フォームをリセット
+  function resetForm() {
+    // 選択項目をリセット
+    document.getElementById('trainer').value = '';
+    document.getElementById('other-store-trainer').value = '';
+    document.getElementById('practice-time').value = '';
+    document.getElementById('tech-category').value = '';
+    document.getElementById('tech-detail').value = '';
+    document.getElementById('tech-detail').disabled = true;
+    document.getElementById('practice-count').value = '';
+    document.getElementById('new-wig-count').value = '0';
+    document.getElementById('evaluation').value = '';
+    document.getElementById('other-details').value = '';
+    
+    // 今日の日付をセット
+    const today = new Date();
+    const formattedDate = today.toISOString().substr(0, 10);
+    document.getElementById('practice-date').value = formattedDate;
+    
+    // 評価欄と他店舗トレーナー選択欄を非表示
+    document.getElementById('evaluation-container').classList.remove('hidden');
+    document.getElementById('other-store-trainers-container').classList.add('hidden');
+  }
+  
+  // ログアウト処理
+  function handleLogout() {
+    if (confirm('ログアウトしてもよろしいですか？')) {
+      google.script.run
+        .withSuccessHandler(function(result) {
+          if (result.success) {
+            window.location.href = '?page=index';
+          } else {
+            showMessage('ログアウトに失敗しました', 'error');
+          }
+        })
+        .withFailureHandler(function(error) {
+          showMessage('ログアウト処理中にエラーが発生しました: ' + error, 'error');
+        })
+        .logout();
+    }
+  }
+  
+  // メッセージ表示
+  function showMessage(message, type) {
+    const messageElement = document.getElementById('message');
+    messageElement.textContent = message;
+    messageElement.className = 'message ' + type;
+    
+    // 3秒後に成功メッセージを消す（エラーメッセージは残す）
+    if (type === 'success') {
+      setTimeout(function() {
+        messageElement.textContent = '';
+        messageElement.className = 'message';
+      }, 3000);
+    }
+  }
+});
+</script>

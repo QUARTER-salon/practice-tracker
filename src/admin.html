@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>美容師練習管理アプリ - 管理者ページ</title>
+  <?!= include('styles'); ?>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>美容師練習管理アプリ - 管理者ページ</h1>
+      <div class="user-info">
+        <span id="user-name"><?= userInfo.名前 ?></span>
+        <span id="user-role">管理者</span>
+        <div class="nav-buttons">
+          <button id="app-btn" class="btn btn-small">アプリに戻る</button>
+          <button id="logout-btn" class="btn btn-small">ログアウト</button>
+        </div>
+      </div>
+    </header>
+    
+    <main>
+      <!-- タブメニュー -->
+      <div class="tab-menu">
+        <button id="tab-store" class="tab-btn active">店舗管理</button>
+        <button id="tab-role" class="tab-btn">役職管理</button>
+        <button id="tab-trainer" class="tab-btn">トレーナー管理</button>
+        <button id="tab-category" class="tab-btn">技術カテゴリー管理</button>
+        <button id="tab-detail" class="tab-btn">詳細技術項目管理</button>
+        <button id="tab-inventory" class="tab-btn">ウィッグ在庫管理</button>
+      </div>
+      
+      <!-- メッセージ表示エリア -->
+      <div id="admin-message" class="message"></div>
+      
+      <!-- 店舗管理タブパネル -->
+      <div id="panel-store" class="tab-panel active">
+        <h2>店舗管理</h2>
+        
+        <div class="admin-content">
+          <div class="admin-form">
+            <h3>店舗追加</h3>
+            <form id="store-form">
+              <div class="form-group">
+                <label for="store-name">店舗名</label>
+                <input type="text" id="store-name" name="storeName" required>
+              </div>
+              <div class="form-actions">
+                <button type="submit" class="btn btn-primary">追加</button>
+              </div>
+            </form>
+          </div>
+          
+          <div class="admin-list">
+            <h3>店舗一覧</h3>
+            <div class="list-container">
+              <table id="store-list" class="admin-table">
+                <thead>
+                  <tr>
+                    <th>店舗名</th>
+                    <th>操作</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <!-- JSで動的に店舗リストを表示 -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <!-- 役職管理タブパネル -->
+      <div id="panel-role" class="tab-panel">
+        <h2>役職管理</h2>
+        
+        <div class="admin-content">
+          <div class="admin-form">
+            <h3>役職追加</h3>
+            <form id="role-form">
+              <div class="form-group">
+                <label for="role-name">役職名</label>
+                <input type="text" id="role-name" name="roleName" required>
+              </div>
+              <div class="form-actions">
+                <button type="submit" class="btn btn-primary">追加</button>
+              </div>
+            </form>
+          </div>
+          
+          <div class="admin-list">
+            <h3>役職一覧</h3>
+            <div class="list-container">
+              <table id="role-list" class="admin-table">
+                <thead>
+                  <tr>
+                    <th>役職名</th>
+                    <th>操作</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <!-- JSで動的に役職リストを表示 -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <!-- トレーナー管理タブパネル -->
+      <div id="panel-trainer" class="tab-panel">
+        <h2>トレーナー管理</h2>
+        
+        <div class="admin-content">
+          <div class="admin-form">
+            <h3>トレーナー追加</h3>
+            <form id="trainer-form">
+              <div class="form-group">
+                <label for="trainer-name">トレーナー名</label>
+                <input type="text" id="trainer-name" name="trainerName" required>
+              </div>
+              <div class="form-group">
+                <label for="trainer-store">所属店舗</label>
+                <select id="trainer-store" name="trainerStore" required>
+                  <option value="">選択してください</option>
+                  <!-- JSで動的に店舗リストを表示 -->
+                </select>
+              </div>
+              <div class="form-actions">
+                <button type="submit" class="btn btn-primary">追加</button>
+              </div>
+            </form>
+          </div>
+          
+          <div class="admin-list">
+            <h3>トレーナー一覧</h3>
+            <div class="list-container">
+              <table id="trainer-list" class="admin-table">
+                <thead>
+                  <tr>
+                    <th>トレーナー名</th>
+                    <th>所属店舗</th>
+                    <th>操作</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <!-- JSで動的にトレーナーリストを表示 -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <!-- 技術カテゴリー管理タブパネル -->
+      <div id="panel-category" class="tab-panel">
+        <h2>技術カテゴリー管理</h2>
+        
+        <div class="admin-content">
+          <div class="admin-form">
+            <h3>カテゴリー追加</h3>
+            <form id="category-form">
+              <div class="form-group">
+                <label for="category-name">カテゴリー名</label>
+                <input type="text" id="category-name" name="categoryName" required>
+              </div>
+              <div class="form-group">
+                <label for="category-roles">対象役職</label>
+                <div id="category-roles-checkboxes" class="checkbox-group">
+                  <!-- JSで動的に役職チェックボックスを表示 -->
+                </div>
+                <div class="checkbox-item">
+                  <input type="checkbox" id="category-all-roles" name="allRoles">
+                  <label for="category-all-roles">全ての役職</label>
+                </div>
+              </div>
+              <div class="form-actions">
+                <button type="submit" class="btn btn-primary">追加</button>
+              </div>
+            </form>
+          </div>
+          
+          <div class="admin-list">
+            <h3>カテゴリー一覧</h3>
+            <div class="list-container">
+              <table id="category-list" class="admin-table">
+                <thead>
+                  <tr>
+                    <th>カテゴリー名</th>
+                    <th>対象役職</th>
+                    <th>操作</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <!-- JSで動的にカテゴリーリストを表示 -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <!-- 詳細技術項目管理タブパネル -->
+      <div id="panel-detail" class="tab-panel">
+        <h2>詳細技術項目管理</h2>
+        
+        <div class="admin-content">
+          <div class="admin-form">
+            <h3>詳細項目追加</h3>
+            <form id="detail-form">
+              <div class="form-group">
+                <label for="detail-name">項目名</label>
+                <input type="text" id="detail-name" name="detailName" required>
+              </div>
+              <div class="form-group">
+                <label for="detail-category">カテゴリー</label>
+                <select id="detail-category" name="detailCategory" required>
+                  <option value="">選択してください</option>
+                  <!-- JSで動的にカテゴリーリストを表示 -->
+                </select>
+              </div>
+              <div class="form-group">
+                <label for="detail-roles">対象役職</label>
+                <div id="detail-roles-checkboxes" class="checkbox-group">
+                  <!-- JSで動的に役職チェックボックスを表示 -->
+                </div>
+                <div class="checkbox-item">
+                  <input type="checkbox" id="detail-all-roles" name="allRoles">
+                  <label for="detail-all-roles">全ての役職</label>
+                </div>
+              </div>
+              <div class="form-actions">
+                <button type="submit" class="btn btn-primary">追加</button>
+              </div>
+            </form>
+          </div>
+          
+          <div class="admin-list">
+            <h3>詳細項目一覧</h3>
+            <div class="list-container">
+              <table id="detail-list" class="admin-table">
+                <thead>
+                  <tr>
+                    <th>項目名</th>
+                    <th>カテゴリー</th>
+                    <th>対象役職</th>
+                    <th>操作</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <!-- JSで動的に詳細項目リストを表示 -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <!-- ウィッグ在庫管理タブパネル -->
+      <div id="panel-inventory" class="tab-panel">
+        <h2>ウィッグ在庫管理</h2>
+        
+        <div class="admin-content">
+          <div class="admin-form">
+            <h3>在庫数更新</h3>
+            <form id="inventory-form">
+              <div class="form-group">
+                <label for="inventory-store">店舗</label>
+                <select id="inventory-store" name="inventoryStore" required>
+                  <option value="">選択してください</option>
+                  <!-- JSで動的に店舗リストを表示 -->
+                </select>
+              </div>
+              <div class="form-group">
+                <label for="inventory-count">在庫数</label>
+                <input type="number" id="inventory-count" name="inventoryCount" min="0" required>
+              </div>
+              <div class="form-actions">
+                <button type="submit" class="btn btn-primary">更新</button>
+              </div>
+            </form>
+          </div>
+          
+          <div class="admin-list">
+            <h3>在庫一覧</h3>
+            <div class="list-container">
+              <table id="inventory-list" class="admin-table">
+                <thead>
+                  <tr>
+                    <th>店舗</th>
+                    <th>在庫数</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <!-- JSで動的に在庫リストを表示 -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+    </main>
+    
+    <footer>
+      <p>&copy; 2025 美容師練習管理アプリ</p>
+    </footer>
+  </div>
+  
+  <?!= include('styles'); ?>
+  <?!= include('script'); ?>
+  <?!= include('admin_script'); ?>
+</body>
+</html>
