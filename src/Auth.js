@@ -159,7 +159,7 @@ function validatePassword(empId, password) {
     const headers = staffData[0];
     const empIdIndex = headers.indexOf('社員番号'); 
     // ★★★ パスワードハッシュ列名を 'PasswordHash' と仮定 ★★★
-    const passwordHashIndex = headers.indexOf('PasswordHash'); 
+    const passwordHashIndex = headers.indexOf('パスワードハッシュ'); 
     
     // 必要な列が存在するかチェック
     if (empIdIndex === -1 || passwordHashIndex === -1) {
