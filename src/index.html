@@ -60,7 +60,7 @@
     </main>
     
     <footer>
-      <p>&copy; 2025 美容師練習管理アプリ</p>
+      <p>© 2025 美容師練習管理アプリ</p>
     </footer>
   </div>
   
@@ -68,100 +68,160 @@
   <script>
     // ログイン画面固有のスクリプト
     document.addEventListener('DOMContentLoaded', function() {
-      // タブ切り替え
+      // --- 要素取得 ---
       const googleTab = document.getElementById('google-tab');
       const passwordTab = document.getElementById('password-tab');
       const googleLogin = document.getElementById('google-login');
       const passwordLogin = document.getElementById('password-login');
-      
-      googleTab.addEventListener('click', function() {
-        googleTab.classList.add('active');
-        passwordTab.classList.remove('active');
-        googleLogin.classList.add('active');
-        passwordLogin.classList.remove('active');
-      });
-      
-      passwordTab.addEventListener('click', function() {
-        passwordTab.classList.add('active');
-        googleTab.classList.remove('active');
-        passwordLogin.classList.add('active');
-        googleLogin.classList.remove('active');
-      });
-      
-      // Googleログインボタン
       const googleLoginBtn = document.getElementById('google-login-btn');
-      googleLoginBtn.addEventListener('click', function() {
-        showLoading(true);
-        google.script.run
-          .withSuccessHandler(handleLoginSuccess)
-          .withFailureHandler(handleLoginError)
-          .loginWithGoogle();
-      });
-      
-      // ID/パスワードログイン
       const loginForm = document.getElementById('login-form');
-      loginForm.addEventListener('submit', function(event) {
-        event.preventDefault();
-        
-        const employeeId = document.getElementById('employee-id').value;
-        const password = document.getElementById('password').value;
-        
-        if (!employeeId || !password) {
-          showError('社員番号とパスワードを入力してください');
-          return;
-        }
-        
-        showLoading(true);
-        google.script.run
-          .withSuccessHandler(handleLoginSuccess)
-          .withFailureHandler(handleLoginError)
-          .loginWithCredentials(employeeId, password);
-      });
+      const loading = document.getElementById('loading');
+      const errorMessageDiv = document.getElementById('error-message'); // エラーメッセージ要素
+
+      // --- タブ切り替え ---
+      if (googleTab && passwordTab && googleLogin && passwordLogin) {
+          googleTab.addEventListener('click', function() {
+            googleTab.classList.add('active');
+            passwordTab.classList.remove('active');
+            googleLogin.classList.add('active');
+            passwordLogin.classList.remove('active');
+            clearError(); // タブ切り替え時にエラーを消す
+          });
+          
+          passwordTab.addEventListener('click', function() {
+            passwordTab.classList.add('active');
+            googleTab.classList.remove('active');
+            passwordLogin.classList.add('active');
+            googleLogin.classList.remove('active');
+            clearError(); // タブ切り替え時にエラーを消す
+          });
+      } else {
+          console.error("ログインタブ関連の要素が見つかりません。");
+      }
       
-      // ログイン成功時の処理
+      // --- Googleログインボタン ---
+      if (googleLoginBtn) {
+          googleLoginBtn.addEventListener('click', function() {
+            clearError(); // ログイン試行時にエラーを消す
+            showLoading(true);
+            google.script.run
+              .withSuccessHandler(handleLoginSuccess)
+              .withFailureHandler(handleLoginError)
+              .loginWithGoogle(); // Auth.js の関数
+          });
+      } else {
+          console.error("Googleログインボタンが見つかりません。");
+      }
+      
+      // --- ID/パスワードログインフォーム ---
+      if (loginForm) {
+          loginForm.addEventListener('submit', function(event) {
+            event.preventDefault();
+            clearError(); // ログイン試行時にエラーを消す
+            
+            const employeeIdInput = document.getElementById('employee-id');
+            const passwordInput = document.getElementById('password');
+            
+            if(!employeeIdInput || !passwordInput) {
+                console.error("社員番号またはパスワードの入力フィールドが見つかりません。");
+                showError('内部エラーが発生しました。');
+                return;
+            }
+
+            const employeeId = employeeIdInput.value;
+            const password = passwordInput.value;
+            
+            if (!employeeId || !password) {
+              showError('社員番号とパスワードを入力してください');
+              return;
+            }
+            
+            showLoading(true);
+            google.script.run
+              .withSuccessHandler(handleLoginSuccess)
+              .withFailureHandler(handleLoginError)
+              .loginWithCredentials(employeeId, password); // Auth.js の関数
+          });
+      } else {
+           console.error("ログインフォームが見つかりません。");
+      }
+      
+      // --- 共通関数 ---
+
+      // ログイン成功時の処理 ★★★ 修正箇所 ★★★
       function handleLoginSuccess(result) {
-        if (result.success) {
-          // ログイン成功時はアプリ画面に遷移
-          window.location.href = '?page=app';
+        logToServer('handleLoginSuccess: 開始, success=' + result?.success); // GASログ
+        if (result && result.success) {
+          logToServer('handleLoginSuccess: ログイン成功、?page=app へ遷移します'); // GASログ
+          // window.location.href = '?page=app'; // 古い方法
+          // 現在の履歴を置き換え、完全なURLで遷移する
+          window.location.replace('<?= ScriptApp.getService().getUrl() ?>?page=app'); 
         } else {
-          // サーバーからエラーメッセージが返ってきた場合
+          const message = result?.message || 'ログインに失敗しました。';
+          logToServer('handleLoginSuccess: ログイン失敗 - ' + message); // GASログ
           showLoading(false);
-          showError(result.message);
+          showError(message);
         }
       }
       
       // ログインエラー時の処理
       function handleLoginError(error) {
+        const errorMessage = error ? (error.message || error.toString()) : '不明なエラー';
+        logToServer('handleLoginError: 発生 - ' + errorMessage); // GASログ
+        console.error("handleLoginError received:", error); // ブラウザログ
         showLoading(false);
-        showError('ログイン処理中にエラーが発生しました: ' + error.message);
+        showError('ログイン処理中にエラーが発生しました: ' + errorMessage);
       }
       
       // エラーメッセージの表示
       function showError(message) {
-        const errorMessage = document.getElementById('error-message');
-        errorMessage.textContent = message;
-        errorMessage.classList.add('visible');
+        if (errorMessageDiv) {
+            errorMessageDiv.textContent = message;
+            errorMessageDiv.classList.add('visible');
+        } else {
+            console.error("エラーメッセージ表示要素が見つかりません:", message);
+        }
+      }
+      
+      // エラーメッセージのクリア
+      function clearError() {
+          if (errorMessageDiv) {
+              errorMessageDiv.textContent = '';
+              errorMessageDiv.classList.remove('visible');
+          }
       }
       
       // ローディング表示の切り替え
       function showLoading(show) {
-        const loading = document.getElementById('loading');
-        const googleLogin = document.getElementById('google-login');
-        const passwordLogin = document.getElementById('password-login');
-        
+        if (!loading || !googleLogin || !passwordLogin || !googleTab) {
+            console.error("ローディングまたはログインパネル要素が見つかりません。");
+            return;
+        }
         if (show) {
           loading.style.display = 'flex';
           googleLogin.style.display = 'none';
           passwordLogin.style.display = 'none';
         } else {
           loading.style.display = 'none';
+          // アクティブなタブに応じて表示を復元
           if (googleTab.classList.contains('active')) {
             googleLogin.style.display = 'block';
+            passwordLogin.style.display = 'none'; 
           } else {
             passwordLogin.style.display = 'block';
+            googleLogin.style.display = 'none';
           }
         }
       }
+
+       // GASログ出力用のヘルパー関数
+       function logToServer(message) {
+          // console.log("[Client Log]", message); // ブラウザコンソールにも出す場合
+          google.script.run
+              // .withSuccessHandler(() => {}) // ログ出力成功/失敗ハンドリングは通常不要
+              // .withFailureHandler(err => console.error("logToServer failed:", err)) 
+              .logMessage(message); // サーバー側 (Utils.js) にログ出力関数を用意
+       }
     });
   </script>
 </body>

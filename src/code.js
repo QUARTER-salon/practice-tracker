@@ -36,7 +36,7 @@ const TECH_DETAIL_SHEET_NAME = '詳細技術項目マスター';
  * @return {HtmlOutput} HTMLページ
  */
 function doGet(e) {
-  Logger.log('doGet: 開始, パラメータ: ' + JSON.stringify(e.parameter)); // ★デバッグログ追加
+  Logger.log('doGet: 開始, パラメータ: ' + JSON.stringify(e.parameter)); 
   const page = e.parameter.page || 'index';
   
   // セッション情報を確認 (Auth.js の関数を呼び出す)
@@ -49,21 +49,21 @@ function doGet(e) {
     // ページに応じたHTMLテンプレートを決定
     switch(page) {
       case 'app': // 練習記録入力画面
-        Logger.log('doGet: app ページ処理開始'); // ★追加
+        Logger.log('doGet: app ページ処理開始'); 
         if (!userSession) {
-          Logger.log('doGet: 未ログインのため index へリダイレクト'); // ★追加
+          Logger.log('doGet: 未ログインのため index へリダイレクト'); 
           template = HtmlService.createTemplateFromFile('index');
           template.redirectMessage = 'ログインが必要です。'; 
         } else {
-          Logger.log('doGet: ログイン済み、app.html テンプレート作成開始'); // ★追加
-          Logger.log('doGet: 渡す userInfo: ' + JSON.stringify(userSession)); // ★追加
+          Logger.log('doGet: ログイン済み、app.html テンプレート作成開始'); 
+          Logger.log('doGet: 渡す userInfo: ' + JSON.stringify(userSession)); 
           try {
             template = HtmlService.createTemplateFromFile('app');
             template.userInfo = userSession; 
-            Logger.log('doGet: app.html テンプレート作成成功'); // ★追加
+            Logger.log('doGet: app.html テンプレート作成成功'); 
           } catch (templateError) {
               console.error('app.html テンプレート作成エラー: ' + templateError);
-              Logger.log('doGet: app.html テンプレート作成エラー - ' + templateError.toString() + '\n' + templateError.stack); // ★スタックトレース追加
+              Logger.log('doGet: app.html テンプレート作成エラー - ' + templateError.toString() + '\n' + templateError.stack); 
               // エラー時はエラーページ表示などに切り替える
               return HtmlService.createHtmlOutput('アプリ画面の読み込みに失敗しました: ' + templateError.toString())
                                 .setTitle('エラー - 美容師練習管理アプリ');
@@ -72,24 +72,24 @@ function doGet(e) {
         break;
         
       case 'admin': // 管理者画面
-         Logger.log('doGet: admin ページ処理開始'); // ★追加
+         Logger.log('doGet: admin ページ処理開始'); 
         // 管理者権限チェック (Utils.js の関数を呼び出す)
         const isAdminUser = userSession ? isAdmin(userSession['メールアドレス'] || userSession.email) : false; // isAdmin内でログ出力あり
-        Logger.log('doGet: 管理者チェック結果 = ' + isAdminUser); // ★追加
+        Logger.log('doGet: 管理者チェック結果 = ' + isAdminUser); 
         if (!isAdminUser) { 
-          Logger.log('doGet: 管理者権限なし、index へリダイレクト'); // ★追加
+          Logger.log('doGet: 管理者権限なし、index へリダイレクト'); 
           template = HtmlService.createTemplateFromFile('index');
           template.redirectMessage = '管理者権限が必要です。';
         } else {
-           Logger.log('doGet: 管理者、admin.html テンプレート作成開始'); // ★追加
-           Logger.log('doGet: 渡す userInfo: ' + JSON.stringify(userSession)); // ★追加
+           Logger.log('doGet: 管理者、admin.html テンプレート作成開始'); 
+           Logger.log('doGet: 渡す userInfo: ' + JSON.stringify(userSession)); 
           try {
               template = HtmlService.createTemplateFromFile('admin');
               template.userInfo = userSession; 
-              Logger.log('doGet: admin.html テンプレート作成成功'); // ★追加
+              Logger.log('doGet: admin.html テンプレート作成成功'); 
           } catch (adminTemplateError) {
               console.error('admin.html テンプレート作成エラー: ' + adminTemplateError);
-              Logger.log('doGet: admin.html テンプレート作成エラー - ' + adminTemplateError.toString() + '\n' + adminTemplateError.stack); // ★スタックトレース追加
+              Logger.log('doGet: admin.html テンプレート作成エラー - ' + adminTemplateError.toString() + '\n' + adminTemplateError.stack); 
               return HtmlService.createHtmlOutput('管理者画面の読み込みに失敗しました: ' + adminTemplateError.toString())
                                 .setTitle('エラー - 美容師練習管理アプリ');
           }
@@ -97,35 +97,35 @@ function doGet(e) {
         break;
         
       default: // 'index' またはその他の場合 (ログイン画面)
-         Logger.log('doGet: index ページ処理開始'); // ★追加
+         Logger.log('doGet: index ページ処理開始'); 
         template = HtmlService.createTemplateFromFile('index');
         template.redirectMessage = e.parameter.message || ''; 
-        Logger.log('doGet: index.html テンプレート作成成功'); // ★追加
+        Logger.log('doGet: index.html テンプレート作成成功'); 
         break;
     }
     
     // テンプレートを評価してHTML出力を作成
     try { 
-        Logger.log('doGet: template.evaluate() 実行前'); // ★追加
+        Logger.log('doGet: template.evaluate() 実行前'); 
         htmlOutput = template.evaluate()
           .setTitle('美容師練習管理アプリ')
           // .setFaviconUrl('https://www.example.com/favicon.ico') // 必要なら設定
           .addMetaTag('viewport', 'width=device-width, initial-scale=1');
-        Logger.log('doGet: template.evaluate() 成功'); // ★追加
+        Logger.log('doGet: template.evaluate() 成功'); 
     } catch(evalError) { 
         console.error('テンプレート評価エラー: ' + evalError);
-        Logger.log('doGet: template.evaluate() エラー - ' + evalError.toString() + '\n' + evalError.stack); // ★スタックトレース追加
+        Logger.log('doGet: template.evaluate() エラー - ' + evalError.toString() + '\n' + evalError.stack); 
         htmlOutput = HtmlService.createHtmlOutput('<h1>エラー</h1><p>ページの生成中にエラーが発生しました。</p>')
                                   .setTitle('エラー - 美容師練習管理アプリ');
     } 
     
-    Logger.log('doGet: 処理終了'); // ★デバッグログ追加
+    Logger.log('doGet: 処理終了'); 
     return htmlOutput;
       
   } catch (err) {
     // doGet関数全体での予期せぬエラー
     console.error('doGet 全体エラー: ' + err);
-    Logger.log('doGet: 全体エラー - ' + err.toString() + '\n' + err.stack); // ★スタックトレース追加
+    Logger.log('doGet: 全体エラー - ' + err.toString() + '\n' + err.stack); 
     htmlOutput = HtmlService.createHtmlOutput(
       '<h1>予期せぬエラー</h1><p>ページの読み込み中に問題が発生しました。管理者に連絡してください。</p>'
       )
@@ -146,7 +146,7 @@ function include(filename) {
     return HtmlService.createHtmlOutputFromFile(filename).getContent();
   } catch (e) {
     console.error('includeエラー (' + filename + '): ' + e);
-    Logger.log('include: ファイル読み込みエラー - ' + filename + ', Error: ' + e.toString()); // ★デバッグログ追加
+    Logger.log('include: ファイル読み込みエラー - ' + filename + ', Error: ' + e.toString()); 
     // エラーが発生した場合は、目立つエラーメッセージを返す
     return '<p style="color: red; font-weight: bold;">Error including file: ' + filename + '. Check logs.</p>'; 
   }

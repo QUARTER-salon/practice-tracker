@@ -9,12 +9,6 @@
  * 
  * @return {boolean} 管理者であればtrue、そうでなければfalse
  */
-// Utils.js などに追加
-function logMessage(message) {
-    // GASの実行ログにメッセージを出力
-    Logger.log('[Frontend] ' + message); 
-  }
-  
 function checkAdminAccess() {
     // 現在のユーザーセッション情報を取得 (Auth.js の関数を呼び出す)
     const userSession = checkSession(); 
@@ -27,7 +21,7 @@ function checkAdminAccess() {
     // メールアドレスを元に管理者かどうかを判定 (isAdmin関数を呼び出す)
     // ユーザー情報オブジェクトのキー名 ('メールアドレス' または 'email') に注意
     const userEmail = userSession['メールアドレス'] || userSession.email; 
-    return isAdmin(userEmail);
+    return isAdmin(userEmail); // isAdmin内でログ出力あり
   }
   
   /**
@@ -69,7 +63,7 @@ function checkAdminAccess() {
           
           // 管理者フラグが TRUE (ブール値)、'TRUE' (大文字文字列)、または 1 (数値) のいずれかであれば管理者とみなす
           const isAdminResult = (isAdminFlag === true || String(isAdminFlag).toUpperCase() === 'TRUE' || isAdminFlag === 1);
-          // Logger.log('isAdmin: ' + email + ' の管理者フラグ = ' + isAdminFlag + ', 結果 = ' + isAdminResult); // デバッグ用ログ
+          Logger.log('isAdmin: ' + email + ' の管理者フラグ = ' + isAdminFlag + ', 結果 = ' + isAdminResult); // デバッグ用ログ
           return isAdminResult;
         }
       }
@@ -84,20 +78,17 @@ function checkAdminAccess() {
     }
   }
   
+  /**
+   * フロントエンドのJavaScriptから呼び出され、GASのログにメッセージを出力する
+   * @param {string} message - ログに出力するメッセージ
+   */
+  function logMessage(message) {
+    // GASの実行ログにメッセージを出力（[Frontend] プレフィックスを付けて区別）
+    Logger.log('[Frontend] ' + message); 
+  }
+  
+  
   // --- 他の共通ユーティリティ関数 (必要に応じて追加) ---
-  
   /* 例：
-  function logError(functionName, error) {
-    console.error('[' + functionName + '] エラー: ' + error);
-    // 必要であれば Stackdriver Logging にも送信
-  }
-  
-  function formatYmd(date) {
-    if (!date) return '';
-    const d = new Date(date);
-    const y = d.getFullYear();
-    const m = ('0' + (d.getMonth() + 1)).slice(-2);
-    const day = ('0' + d.getDate()).slice(-2);
-    return y + '-' + m + '-' + day;
-  }
+  function formatYmd(date) { ... }
   */
