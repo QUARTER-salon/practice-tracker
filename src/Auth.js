@@ -1,6 +1,6 @@
 /**
  * 美容師練習管理Webアプリケーション
- * 認証・セッション管理・関連データ取得 のGASファイル
+ * 認証・セッション管理・関連データ取得 のGASファイル (デバッグログ強化版)
  */
 
 /**
@@ -11,20 +11,22 @@
 function checkSession() {
   const userProperties = PropertiesService.getUserProperties();
   const sessionData = userProperties.getProperty('session');
+  Logger.log('checkSession: セッションデータ取得試行...'); // ★デバッグログ追加
   
   if (!sessionData) {
-    // セッションデータが存在しない場合は未ログイン
+    Logger.log('checkSession: セッションデータなし (未ログイン)'); // ★デバッグログ追加
     return null;
   }
   
   try {
-    // セッションデータをJSONオブジェクトにパースして返す
-    return JSON.parse(sessionData);
+    const userInfo = JSON.parse(sessionData);
+    Logger.log('checkSession: セッションデータあり, User: ' + userInfo['メールアドレス'] || userInfo.email); // ★デバッグログ追加
+    return userInfo;
   } catch (e) {
     console.error('セッションデータの解析に失敗しました: ' + e);
-    // セッションデータが壊れている可能性があるので削除
+    Logger.log('checkSession: セッションデータ解析エラー - ' + e.toString()); // ★デバッグログ追加
     PropertiesService.getUserProperties().deleteProperty('session'); 
-    return null; // 解析失敗時も未ログイン扱い
+    return null; 
   }
 }
 
@@ -36,11 +38,12 @@ function checkSession() {
 function setSession(userInfo) {
   const userProperties = PropertiesService.getUserProperties();
   try {
-    // ユーザー情報をJSON文字列に変換してユーザープロパティに保存
-    userProperties.setProperty('session', JSON.stringify(userInfo));
+    const sessionJson = JSON.stringify(userInfo);
+    Logger.log('setSession: ユーザー情報をセッションに保存 - ' + sessionJson); // ★デバッグログ追加
+    userProperties.setProperty('session', sessionJson);
   } catch (e) {
     console.error('セッション情報の保存に失敗しました: ' + e);
-    // エラーが発生した場合の処理（必要であれば）
+    Logger.log('setSession: セッション保存エラー - ' + e.toString()); // ★デバッグログ追加
   }
 }
 
@@ -52,12 +55,13 @@ function setSession(userInfo) {
 function logout() {
   try {
     const userProperties = PropertiesService.getUserProperties();
-    // 'session' プロパティを削除
+    Logger.log('logout: セッション削除実行'); // ★デバッグログ追加
     userProperties.deleteProperty('session');
     
-    return { success: true }; // 成功したことを示すオブジェクトを返す
+    return { success: true }; 
   } catch (e) {
     console.error('ログアウトエラー: ' + e);
+    Logger.log('logout: ログアウトエラー - ' + e.toString()); // ★デバッグログ追加
     return { success: false, message: 'ログアウト処理中にエラーが発生しました: ' + e.toString() };
   }
 }
@@ -68,33 +72,33 @@ function logout() {
  * @return {Object} ログイン結果 { success: boolean, userInfo?: Object, message?: string }
  */
 function loginWithGoogle() {
+  Logger.log('loginWithGoogle: Googleログイン処理開始'); // ★デバッグログ追加
   try {
-    // 現在アクティブなユーザーのメールアドレスを取得
     const userEmail = Session.getActiveUser().getEmail();
+    Logger.log('loginWithGoogle: 取得したメールアドレス = ' + userEmail); // ★デバッグログ追加
     
     if (!userEmail) {
-      // メールアドレスが取得できない場合（通常は発生しないはず）
+      Logger.log('loginWithGoogle: Googleアカウント情報の取得失敗'); // ★デバッグログ追加
       return { success: false, message: 'Googleアカウント情報の取得に失敗しました。' };
     }
     
-    // メールアドレスを元にスタッフマスターシートからユーザー情報を検索
-    const userInfo = findUserByEmail(userEmail);
+    const userInfo = findUserByEmail(userEmail); // 下の関数でログ出力
     
     if (!userInfo) {
-      // スタッフマスターに該当するメールアドレスが存在しない場合
+      // findUserByEmail関数内でログ出力されるので、ここでは不要
       return { success: false, message: 'スタッフ情報が見つかりません。システム管理者に連絡してください。' };
     }
     
-    // ログイン成功。セッションにユーザー情報を保存
-    setSession(userInfo);
+    setSession(userInfo); // 下の関数でログ出力
     
-    // 成功結果とユーザー情報を返す
+    Logger.log('loginWithGoogle: Googleログイン成功'); // ★デバッグログ追加
     return { 
       success: true, 
       userInfo: userInfo 
     };
   } catch (e) {
     console.error('Google認証エラー: ' + e);
+    Logger.log('loginWithGoogle: Google認証エラー - ' + e.toString() + '\n' + e.stack); // ★スタックトレース追加
     return { success: false, message: 'ログイン処理中にエラーが発生しました: ' + e.toString() };
   }
 }
@@ -107,91 +111,90 @@ function loginWithGoogle() {
  * @return {Object} ログイン結果 { success: boolean, userInfo?: Object, message?: string }
  */
 function loginWithCredentials(empId, password) {
+  Logger.log('loginWithCredentials: ID/PWログイン試行 - 社員番号=' + empId); // ★デバッグログ追加
   try {
-    // 社員番号とパスワードが入力されているかチェック
     if (!empId || !password) {
+      Logger.log('loginWithCredentials: 社員番号またはパスワード未入力'); // ★デバッグログ追加
       return { success: false, message: '社員番号とパスワードを入力してください。' };
     }
     
-    // 社員番号を元にスタッフマスターシートからユーザー情報を検索
-    const userInfo = findUserByEmpId(empId);
+    const userInfo = findUserByEmpId(empId); // 下の関数でログ出力
     
     if (!userInfo) {
-      // スタッフマスターに該当する社員番号が存在しない場合
+      // findUserByEmpId関数内でログ出力されるので、ここでは不要
       return { success: false, message: 'スタッフ情報が見つかりません。' };
     }
     
-    // パスワードを検証
-    if (!validatePassword(empId, password)) {
-      // パスワードが一致しない場合
+    Logger.log('loginWithCredentials: パスワード検証開始 - 社員番号=' + empId + ', 入力パスワード=' + password); // ★デバッグログ追加
+    if (!validatePassword(empId, password)) { // 下の関数でログ出力
+      Logger.log('loginWithCredentials: パスワード検証失敗'); // ★デバッグログ追加
       return { success: false, message: '社員番号またはパスワードが正しくありません。' };
     }
     
-    // ログイン成功。セッションにユーザー情報を保存
-    setSession(userInfo);
+    setSession(userInfo); // 下の関数でログ出力
     
-    // 成功結果とユーザー情報を返す
+    Logger.log('loginWithCredentials: ID/PWログイン成功'); // ★デバッグログ追加
     return { 
       success: true, 
       userInfo: userInfo 
     };
   } catch (e) {
     console.error('ID/パスワード認証エラー: ' + e);
+    Logger.log('loginWithCredentials: ID/PW認証エラー - ' + e.toString() + '\n' + e.stack); // ★スタックトレース追加
     return { success: false, message: 'ログイン処理中にエラーが発生しました: ' + e.toString() };
   }
 }
 
 /**
  * パスワードを検証する（ハッシュ化対応準備）
- * ※ 現在は平文比較（非推奨）。Step 1 でハッシュ比較に要変更。
  * 
  * @param {string} empId - 社員番号
  * @param {string} password - 入力されたパスワード
  * @return {boolean} パスワードが正しければtrue
  */
 function validatePassword(empId, password) {
+  Logger.log('validatePassword: 検証開始 - 社員番号=' + empId); // ★デバッグログ追加
   try {
-    // スタッフマスターシートを取得
     const staffMasterSheet = SpreadsheetApp.openById(SPREADSHEET_ID).getSheetByName(STAFF_MASTER_SHEET_NAME);
     const staffData = staffMasterSheet.getDataRange().getValues();
     
-    // ヘッダー行から列インデックスを取得
     const headers = staffData[0];
     const empIdIndex = headers.indexOf('社員番号'); 
-    // ★★★ パスワードハッシュ列名を 'PasswordHash' と仮定 ★★★
-    const passwordHashIndex = headers.indexOf('パスワードハッシュ'); 
+    const passwordHashIndex = headers.indexOf('パスワードハッシュ'); // ★★★ 列名を確認 ★★★
     
-    // 必要な列が存在するかチェック
     if (empIdIndex === -1 || passwordHashIndex === -1) {
-      console.error('スタッフマスターシートに必要な列（社員番号 or PasswordHash）がありません。');
-      return false; // 検証不可
+      console.error('スタッフマスターシートに必要な列（社員番号 or パスワードハッシュ）がありません。');
+      Logger.log('validatePassword: 必要な列が見つかりません。'); // ★デバッグログ追加
+      return false;
     }
     
-    // 該当する社員番号の行を検索
     for (let i = 1; i < staffData.length; i++) {
-      // スプレッドシートの値は数値の場合もあるため `==` で比較
       if (staffData[i][empIdIndex] == empId) { 
-        const storedHash = staffData[i][passwordHashIndex];
+        const storedValue = staffData[i][passwordHashIndex];
+        // ★★★ 型も含めてログ出力 ★★★
+        Logger.log('validatePassword: 一致する社員番号発見 (行' + (i+1) + ') - 保存値=[' + storedValue + '] (' + typeof storedValue + '), 入力値=[' + password + '] (' + typeof password + ')'); 
         
-        // --- Step 1 での実装箇所 ---
-        // ここで bcrypt などのライブラリを使って password と storedHash を比較する
-        // 例: return BcryptGS.checkpw(password, storedHash); 
-        // --- 実装箇所ここまで ---
+        // --- Step 1 での実装箇所 (ハッシュ比較) ---
+        // return BcryptGS.checkpw(password, storedValue); 
         
-        // --- 現状の仮実装 (平文比較 - セキュリティ上非常に危険！) ---
-        // 実際の運用では必ずハッシュ比較に置き換えてください！
-        Logger.log("パスワード検証中 (仮実装: 平文比較)"); // 仮実装であることをログに残す
-        return storedHash === password; 
+        // --- 現状の仮実装 (厳密な比較) ---
+        // スプレッドシートの値が数値の場合も考慮し、両方を文字列に変換して比較する
+        const validationResult = String(storedValue) === String(password); 
+        Logger.log('validatePassword: 比較結果 = ' + validationResult); // ★デバッグログ追加
+        return validationResult;
         // --- 仮実装ここまで ---
       }
     }
     
-    return false; // 該当する社員番号が見つからない場合
+    Logger.log('validatePassword: 一致する社員番号が見つかりませんでした。'); // ★デバッグログ追加
+    return false; // ユーザーが見つからない
   } catch (e) {
     console.error('パスワード検証エラー: ' + e);
-    return false; // エラー発生時は検証失敗とする
+    Logger.log('validatePassword: 検証エラー - ' + e.toString()); // ★デバッグログ追加
+    return false; 
   }
 }
+
 
 /**
  * メールアドレスからユーザー情報をスタッフマスターシートで検索する
@@ -200,7 +203,11 @@ function validatePassword(empId, password) {
  * @return {Object|null} 見つかったユーザー情報オブジェクト、またはnull
  */
 function findUserByEmail(email) {
-  if (!email) return null; // メールアドレスがなければ検索しない
+  Logger.log('findUserByEmail: 検索開始 - メールアドレス=' + email); // ★デバッグログ追加
+  if (!email) {
+     Logger.log('findUserByEmail: メールアドレスが指定されていません。');
+     return null;
+  }
   
   try {
     const staffMasterSheet = SpreadsheetApp.openById(SPREADSHEET_ID).getSheetByName(STAFF_MASTER_SHEET_NAME);
@@ -210,28 +217,28 @@ function findUserByEmail(email) {
 
     if (emailIndex === -1) {
       console.error('スタッフマスターシートに「メールアドレス」列がありません。');
+      Logger.log('findUserByEmail: 「メールアドレス」列が見つかりません。'); // ★デバッグログ追加
       return null;
     }
     
-    // 1行目（ヘッダー）を除いて検索
     for (let i = 1; i < staffData.length; i++) {
       if (staffData[i][emailIndex] === email) {
-        // 見つかった行のデータをオブジェクトに変換して返す
+        Logger.log('findUserByEmail: 一致するメールアドレス発見 (行' + (i+1) + ')'); // ★デバッグログ追加
         const userInfo = {};
         for (let j = 0; j < headers.length; j++) {
-          // 列名（ヘッダー）をキーとして値を取得
-          // 必要であればここでキー名を英語に変換する処理を追加
-          // 例: const key = headerToEnglishKey(headers[j]); userInfo[key] = staffData[i][j];
           userInfo[headers[j]] = staffData[i][j]; 
         }
-        return userInfo; // 最初に見つかったものを返す
+        Logger.log('findUserByEmail: 取得したユーザー情報: ' + JSON.stringify(userInfo)); // ★デバッグログ追加
+        return userInfo; 
       }
     }
     
+    Logger.log('findUserByEmail: 一致するメールアドレスが見つかりませんでした。'); // ★デバッグログ追加
     return null; // 見つからなかった場合
   } catch (e) {
     console.error('メールアドレスによるユーザー検索エラー: ' + e);
-    return null; // エラー発生時はnullを返す
+    Logger.log('findUserByEmail: 検索エラー - ' + e.toString()); // ★デバッグログ追加
+    return null; 
   }
 }
 
@@ -242,7 +249,11 @@ function findUserByEmail(email) {
  * @return {Object|null} 見つかったユーザー情報オブジェクト、またはnull
  */
 function findUserByEmpId(empId) {
-  if (!empId) return null; // 社員番号がなければ検索しない
+  Logger.log('findUserByEmpId: 検索開始 - 社員番号=' + empId); // ★デバッグログ追加
+  if (!empId) {
+      Logger.log('findUserByEmpId: 社員番号が指定されていません。');
+      return null;
+  } 
   
   try {
     const staffMasterSheet = SpreadsheetApp.openById(SPREADSHEET_ID).getSheetByName(STAFF_MASTER_SHEET_NAME);
@@ -252,28 +263,29 @@ function findUserByEmpId(empId) {
 
     if (empIdIndex === -1) {
       console.error('スタッフマスターシートに「社員番号」列がありません。');
+      Logger.log('findUserByEmpId: 「社員番号」列が見つかりません。'); // ★デバッグログ追加
       return null;
     }
     
-    // 1行目（ヘッダー）を除いて検索
     for (let i = 1; i < staffData.length; i++) {
-      // スプレッドシートの社員番号が数値でも文字列でも比較できるよう `==` を使用
-      if (staffData[i][empIdIndex] == empId) { 
-        // 見つかった行のデータをオブジェクトに変換して返す
+      // ★★★ 型を考慮して比較 ★★★
+      if (String(staffData[i][empIdIndex]) === String(empId)) { 
+         Logger.log('findUserByEmpId: 一致する社員番号発見 (行' + (i+1) + ')'); // ★デバッグログ追加
         const userInfo = {};
         for (let j = 0; j < headers.length; j++) {
-           // 列名（ヘッダー）をキーとして値を取得
-           // 必要であればここでキー名を英語に変換
           userInfo[headers[j]] = staffData[i][j];
         }
-        return userInfo; // 最初に見つかったものを返す
+         Logger.log('findUserByEmpId: 取得したユーザー情報: ' + JSON.stringify(userInfo)); // ★デバッグログ追加
+        return userInfo; 
       }
     }
     
+    Logger.log('findUserByEmpId: 一致する社員番号が見つかりませんでした。'); // ★デバッグログ追加
     return null; // 見つからなかった場合
   } catch (e) {
     console.error('社員番号によるユーザー検索エラー: ' + e);
-    return null; // エラー発生時はnullを返す
+    Logger.log('findUserByEmpId: 検索エラー - ' + e.toString()); // ★デバッグログ追加
+    return null; 
   }
 }
 
@@ -283,54 +295,55 @@ function findUserByEmpId(empId) {
  * @return {Object} トレーナー情報 { success: boolean, data?: { userStoreTrainers: Array, otherStoreTrainers: Array }, message?: string }
  */
 function getTrainers() {
+  Logger.log('getTrainers: トレーナーリスト取得開始'); // ★デバッグログ追加
   try {
-    const userSession = checkSession();
+    const userSession = checkSession(); // checkSession内でログ出力
     if (!userSession) {
       return { success: false, message: 'ログインが必要です。' };
     }
-    const userStore = userSession.店舗; // ログインユーザーの店舗名
+    const userStore = userSession.店舗; 
+    Logger.log('getTrainers: ログインユーザーの店舗 = ' + userStore); // ★デバッグログ追加
     
     const trainerMasterSheet = SpreadsheetApp.openById(SPREADSHEET_ID).getSheetByName(TRAINER_MASTER_SHEET_NAME);
     const trainerData = trainerMasterSheet.getDataRange().getValues();
     
     const headers = trainerData[0];
-    const nameIndex = headers.indexOf('名前');
-    const storeIndex = headers.indexOf('店舗');
+    const nameIndex = headers.indexOf('名前'); 
+    const storeIndex = headers.indexOf('店舗'); 
     
     if (nameIndex === -1 || storeIndex === -1) {
+      Logger.log('getTrainers: トレーナーマスターシートの形式不正'); // ★デバッグログ追加
       return { success: false, message: 'トレーナーマスターシートの形式が正しくありません。' };
     }
     
     const userStoreTrainers = [];
     const otherStoreTrainers = [];
     
-    // 1行目（ヘッダー）を除いて処理
     for (let i = 1; i < trainerData.length; i++) {
       const trainer = {
         name: trainerData[i][nameIndex],
         store: trainerData[i][storeIndex]
       };
-      
-      // ユーザーと同じ店舗か、それ以外かで振り分ける
-      if (trainer.store === userStore) {
-        userStoreTrainers.push(trainer);
-      } else {
-        otherStoreTrainers.push(trainer);
+      if (trainer.name && trainer.store) { // 名前と店舗がある場合のみ
+          if (trainer.store === userStore) {
+            userStoreTrainers.push(trainer);
+          } else {
+            otherStoreTrainers.push(trainer);
+          }
       }
     }
+    Logger.log('getTrainers: 同店舗トレーナー数=' + userStoreTrainers.length + ', 他店舗トレーナー数=' + otherStoreTrainers.length); // ★デバッグログ追加
     
-    // フロントエンドで扱いやすいように整形して返す
-    // 固定選択肢はフロントエンド側で追加してもよい
     return {
       success: true,
       data: {
         userStoreTrainers: userStoreTrainers,
         otherStoreTrainers: otherStoreTrainers
-        // fixedOptions は削除 (フロント側で '自主練', 'その他', '他店舗〜' を追加)
       }
     };
   } catch (e) {
     console.error('トレーナー情報取得エラー: ' + e);
+     Logger.log('getTrainers: 取得エラー - ' + e.toString()); // ★デバッグログ追加
     return { success: false, message: 'トレーナー情報の取得中にエラーが発生しました: ' + e.toString() };
   }
 }
@@ -341,14 +354,16 @@ function getTrainers() {
  * @return {Object} カテゴリーリスト { success: boolean, data?: Array<string>, message?: string }
  */
 function getTechCategories() {
+  Logger.log('getTechCategories: カテゴリーリスト取得開始'); // ★デバッグログ追加
   try {
-    const userSession = checkSession();
+    const userSession = checkSession(); // checkSession内でログ出力
     if (!userSession) {
       return { success: false, message: 'ログインが必要です。' };
     }
-    // ユーザー情報の 'Role' 列名を確認
     const userRole = userSession.Role; 
+    Logger.log('getTechCategories: ログインユーザーの役職 = ' + userRole); // ★デバッグログ追加
     if (!userRole) {
+        Logger.log('getTechCategories: ユーザー役職情報なし'); // ★デバッグログ追加
         return { success: false, message: 'ユーザーの役職情報が見つかりません。' };
     }
     
@@ -360,28 +375,26 @@ function getTechCategories() {
     const roleIndex = headers.indexOf('対象役職');
     
     if (nameIndex === -1 || roleIndex === -1) {
+       Logger.log('getTechCategories: カテゴリーマスターシートの形式不正'); // ★デバッグログ追加
       return { success: false, message: '技術カテゴリーマスターシートの形式が正しくありません。' };
     }
     
     const availableCategories = [];
-    // 1行目（ヘッダー）を除いて処理
     for (let i = 1; i < categoryData.length; i++) {
       const categoryName = categoryData[i][nameIndex];
-      // 対象役職が空でないことを確認
       const targetRolesString = categoryData[i][roleIndex] ? categoryData[i][roleIndex].toString() : '';
-      const targetRoles = targetRolesString.split(',').map(role => role.trim()).filter(role => role); // 空要素を除去
+      const targetRoles = targetRolesString.split(',').map(role => role.trim()).filter(role => role); 
       
-      // ユーザーの役職が対象に含まれるか、または '全て' が指定されているか
-      if (targetRoles.includes(userRole) || targetRoles.includes('全て')) {
-        if(categoryName) { // カテゴリー名が空でないことを確認
-            availableCategories.push(categoryName);
-        }
+      if (categoryName && (targetRoles.includes(userRole) || targetRoles.includes('全て'))) {
+        availableCategories.push(categoryName);
       }
     }
+    Logger.log('getTechCategories: 利用可能なカテゴリー数=' + availableCategories.length); // ★デバッグログ追加
     
     return { success: true, data: availableCategories };
   } catch (e) {
     console.error('技術カテゴリー取得エラー: ' + e);
+     Logger.log('getTechCategories: 取得エラー - ' + e.toString()); // ★デバッグログ追加
     return { success: false, message: '技術カテゴリーの取得中にエラーが発生しました: ' + e.toString() };
   }
 }
@@ -393,19 +406,21 @@ function getTechCategories() {
  * @return {Object} 詳細項目リスト { success: boolean, data?: Array<string>, message?: string }
  */
 function getTechDetails(category) {
+  Logger.log('getTechDetails: 詳細項目リスト取得開始 - カテゴリー=' + category); // ★デバッグログ追加
   try {
-    // カテゴリーが指定されているかチェック
     if (!category) {
+      Logger.log('getTechDetails: カテゴリー未指定'); // ★デバッグログ追加
       return { success: false, message: 'カテゴリーが指定されていません。' };
     }
     
-    const userSession = checkSession();
+    const userSession = checkSession(); // checkSession内でログ出力
     if (!userSession) {
       return { success: false, message: 'ログインが必要です。' };
     }
-    // ユーザー情報の 'Role' 列名を確認
     const userRole = userSession.Role; 
+    Logger.log('getTechDetails: ログインユーザーの役職 = ' + userRole); // ★デバッグログ追加
     if (!userRole) {
+        Logger.log('getTechDetails: ユーザー役職情報なし'); // ★デバッグログ追加
         return { success: false, message: 'ユーザーの役職情報が見つかりません。' };
     }
     
@@ -418,29 +433,27 @@ function getTechDetails(category) {
     const roleIndex = headers.indexOf('対象役職');
     
     if (nameIndex === -1 || categoryIndex === -1 || roleIndex === -1) {
+      Logger.log('getTechDetails: 詳細項目マスターシートの形式不正'); // ★デバッグログ追加
       return { success: false, message: '詳細技術項目マスターシートの形式が正しくありません。' };
     }
     
     const availableDetails = [];
-    // 1行目（ヘッダー）を除いて処理
     for (let i = 1; i < detailData.length; i++) {
       const detailName = detailData[i][nameIndex];
       const detailCategory = detailData[i][categoryIndex];
-      // 対象役職が空でないことを確認
       const targetRolesString = detailData[i][roleIndex] ? detailData[i][roleIndex].toString() : '';
-      const targetRoles = targetRolesString.split(',').map(role => role.trim()).filter(role => role); // 空要素を除去
+      const targetRoles = targetRolesString.split(',').map(role => role.trim()).filter(role => role); 
       
-      // カテゴリーが一致し、かつ (ユーザー役職が対象に含まれるか、または '全て' が指定されているか)
-      if (detailCategory === category && (targetRoles.includes(userRole) || targetRoles.includes('全て'))) {
-        if (detailName) { // 詳細項目名が空でないことを確認
-            availableDetails.push(detailName);
-        }
+      if (detailName && detailCategory === category && (targetRoles.includes(userRole) || targetRoles.includes('全て'))) {
+        availableDetails.push(detailName);
       }
     }
+    Logger.log('getTechDetails: 利用可能な詳細項目数=' + availableDetails.length); // ★デバッグログ追加
     
     return { success: true, data: availableDetails };
   } catch (e) {
     console.error('詳細技術項目取得エラー: ' + e);
+    Logger.log('getTechDetails: 取得エラー - ' + e.toString()); // ★デバッグログ追加
     return { success: false, message: '詳細技術項目の取得中にエラーが発生しました: ' + e.toString() };
   }
 }
