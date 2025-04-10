@@ -9,6 +9,12 @@
  * 
  * @return {boolean} 管理者であればtrue、そうでなければfalse
  */
+// Utils.js などに追加
+function logMessage(message) {
+    // GASの実行ログにメッセージを出力
+    Logger.log('[Frontend] ' + message); 
+  }
+  
 function checkAdminAccess() {
     // 現在のユーザーセッション情報を取得 (Auth.js の関数を呼び出す)
     const userSession = checkSession(); 
