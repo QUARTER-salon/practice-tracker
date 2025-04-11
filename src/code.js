@@ -37,20 +37,31 @@ const TECH_DETAIL_SHEET_NAME = '詳細技術項目マスター';
  */
 function doGet(e) {
   Logger.log('doGet: 開始, パラメータ: ' + JSON.stringify(e.parameter)); 
-  const page = e.parameter.page || 'index';
+  let page = e.parameter.page || 'index'; // デフォルトはindex
   
-  // セッション情報を確認 (Auth.js の関数を呼び出す)
-  const userSession = checkSession(); // checkSession 内でログ出力あり
+  const userSession = checkSession(); // セッション取得 (Auth.js)
   
+  // ★★★ セッションのリダイレクトフラグを確認・処理 ★★★
+  if (userSession && userSession.redirectToApp === true) {
+      Logger.log('doGet: redirectToApp フラグ検出。ページを app に強制設定。');
+      page = 'app'; // ページを 'app' に強制
+      
+      // フラグをセッションから削除（再読み込みで意図せず app が表示されるのを防ぐ）
+      delete userSession.redirectToApp; 
+      setSession(userSession); // 更新されたセッションを保存 (Auth.js)
+      Logger.log('doGet: redirectToApp フラグをセッションから削除しました。');
+  }
+  // ★★★ ここまで追加 ★★★
+
   let template; 
   let htmlOutput; 
   
   try {
-    // ページに応じたHTMLテンプレートを決定
+    // page 変数に基づいてテンプレートを決定 (page は上記で上書きされている可能性あり)
     switch(page) {
-      case 'app': // 練習記録入力画面
-        Logger.log('doGet: app ページ処理開始'); 
-        if (!userSession) {
+      case 'app': 
+        Logger.log('doGet: app ページ処理開始 (page=' + page + ')'); 
+        if (!userSession) { // フラグがあってもセッション自体がなければログインへ
           Logger.log('doGet: 未ログインのため index へリダイレクト'); 
           template = HtmlService.createTemplateFromFile('index');
           template.redirectMessage = 'ログインが必要です。'; 
@@ -64,17 +75,15 @@ function doGet(e) {
           } catch (templateError) {
               console.error('app.html テンプレート作成エラー: ' + templateError);
               Logger.log('doGet: app.html テンプレート作成エラー - ' + templateError.toString() + '\n' + templateError.stack); 
-              // エラー時はエラーページ表示などに切り替える
               return HtmlService.createHtmlOutput('アプリ画面の読み込みに失敗しました: ' + templateError.toString())
                                 .setTitle('エラー - 美容師練習管理アプリ');
           }
         }
         break;
         
-      case 'admin': // 管理者画面
+      case 'admin': 
          Logger.log('doGet: admin ページ処理開始'); 
-        // 管理者権限チェック (Utils.js の関数を呼び出す)
-        const isAdminUser = userSession ? isAdmin(userSession['メールアドレス'] || userSession.email) : false; // isAdmin内でログ出力あり
+        const isAdminUser = userSession ? isAdmin(userSession['メールアドレス'] || userSession.email) : false; // Utils.js の関数
         Logger.log('doGet: 管理者チェック結果 = ' + isAdminUser); 
         if (!isAdminUser) { 
           Logger.log('doGet: 管理者権限なし、index へリダイレクト'); 
@@ -109,7 +118,6 @@ function doGet(e) {
         Logger.log('doGet: template.evaluate() 実行前'); 
         htmlOutput = template.evaluate()
           .setTitle('美容師練習管理アプリ')
-          // .setFaviconUrl('https://www.example.com/favicon.ico') // 必要なら設定
           .addMetaTag('viewport', 'width=device-width, initial-scale=1');
         Logger.log('doGet: template.evaluate() 成功'); 
     } catch(evalError) { 

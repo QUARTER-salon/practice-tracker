@@ -72,33 +72,37 @@ function logout() {
  * @return {Object} ログイン結果 { success: boolean, userInfo?: Object, message?: string }
  */
 function loginWithGoogle() {
-  Logger.log('loginWithGoogle: Googleログイン処理開始'); // ★デバッグログ追加
+  Logger.log('loginWithGoogle: Googleログイン処理開始'); 
   try {
     const userEmail = Session.getActiveUser().getEmail();
-    Logger.log('loginWithGoogle: 取得したメールアドレス = ' + userEmail); // ★デバッグログ追加
+    Logger.log('loginWithGoogle: 取得したメールアドレス = ' + userEmail); 
     
     if (!userEmail) {
-      Logger.log('loginWithGoogle: Googleアカウント情報の取得失敗'); // ★デバッグログ追加
+      Logger.log('loginWithGoogle: Googleアカウント情報の取得失敗'); 
       return { success: false, message: 'Googleアカウント情報の取得に失敗しました。' };
     }
     
-    const userInfo = findUserByEmail(userEmail); // 下の関数でログ出力
+    const userInfo = findUserByEmail(userEmail); // findUserByEmail内でログ出力
     
     if (!userInfo) {
-      // findUserByEmail関数内でログ出力されるので、ここでは不要
       return { success: false, message: 'スタッフ情報が見つかりません。システム管理者に連絡してください。' };
     }
     
-    setSession(userInfo); // 下の関数でログ出力
+    // ★★★ リダイレクトフラグを追加 ★★★
+    userInfo.redirectToApp = true; 
+    Logger.log('loginWithGoogle: redirectToApp フラグを userInfo に追加');
+
+    // セッションにユーザー情報を保存
+    setSession(userInfo); // setSession内でログ出力
     
-    Logger.log('loginWithGoogle: Googleログイン成功'); // ★デバッグログ追加
+    Logger.log('loginWithGoogle: Googleログイン成功'); 
     return { 
       success: true, 
       userInfo: userInfo 
     };
   } catch (e) {
     console.error('Google認証エラー: ' + e);
-    Logger.log('loginWithGoogle: Google認証エラー - ' + e.toString() + '\n' + e.stack); // ★スタックトレース追加
+    Logger.log('loginWithGoogle: Google認証エラー - ' + e.toString() + '\n' + e.stack); 
     return { success: false, message: 'ログイン処理中にエラーが発生しました: ' + e.toString() };
   }
 }
@@ -111,36 +115,40 @@ function loginWithGoogle() {
  * @return {Object} ログイン結果 { success: boolean, userInfo?: Object, message?: string }
  */
 function loginWithCredentials(empId, password) {
-  Logger.log('loginWithCredentials: ID/PWログイン試行 - 社員番号=' + empId); // ★デバッグログ追加
+  Logger.log('loginWithCredentials: ID/PWログイン試行 - 社員番号=' + empId); 
   try {
     if (!empId || !password) {
-      Logger.log('loginWithCredentials: 社員番号またはパスワード未入力'); // ★デバッグログ追加
+      Logger.log('loginWithCredentials: 社員番号またはパスワード未入力'); 
       return { success: false, message: '社員番号とパスワードを入力してください。' };
     }
     
-    const userInfo = findUserByEmpId(empId); // 下の関数でログ出力
+    const userInfo = findUserByEmpId(empId); // findUserByEmpId内でログ出力
     
     if (!userInfo) {
-      // findUserByEmpId関数内でログ出力されるので、ここでは不要
       return { success: false, message: 'スタッフ情報が見つかりません。' };
     }
     
-    Logger.log('loginWithCredentials: パスワード検証開始 - 社員番号=' + empId + ', 入力パスワード=' + password); // ★デバッグログ追加
-    if (!validatePassword(empId, password)) { // 下の関数でログ出力
-      Logger.log('loginWithCredentials: パスワード検証失敗'); // ★デバッグログ追加
+    Logger.log('loginWithCredentials: パスワード検証開始 - 社員番号=' + empId + ', 入力パスワード=' + password); 
+    if (!validatePassword(empId, password)) { // validatePassword内でログ出力
+      Logger.log('loginWithCredentials: パスワード検証失敗'); 
       return { success: false, message: '社員番号またはパスワードが正しくありません。' };
     }
+
+    // ★★★ リダイレクトフラグを追加 ★★★
+    userInfo.redirectToApp = true; 
+    Logger.log('loginWithCredentials: redirectToApp フラグを userInfo に追加');
+
+    // セッションにユーザー情報を保存
+    setSession(userInfo); // setSession内でログ出力
     
-    setSession(userInfo); // 下の関数でログ出力
-    
-    Logger.log('loginWithCredentials: ID/PWログイン成功'); // ★デバッグログ追加
+    Logger.log('loginWithCredentials: ID/PWログイン成功'); 
     return { 
       success: true, 
       userInfo: userInfo 
     };
   } catch (e) {
     console.error('ID/パスワード認証エラー: ' + e);
-    Logger.log('loginWithCredentials: ID/PW認証エラー - ' + e.toString() + '\n' + e.stack); // ★スタックトレース追加
+    Logger.log('loginWithCredentials: ID/PW認証エラー - ' + e.toString() + '\n' + e.stack); 
     return { success: false, message: 'ログイン処理中にエラーが発生しました: ' + e.toString() };
   }
 }

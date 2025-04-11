@@ -150,45 +150,32 @@
 
       // --- 共通関数 ---
 
-      // ログイン成功時の処理 ★★★ 修正箇所 ★★★
-      function handleLoginSuccess(result) {
+            // ログイン成功時の処理 ★★★ 修正箇所 ★★★
+            function handleLoginSuccess(result) {
         logToServer('handleLoginSuccess: 開始, success=' + result?.success); // GASログ
         if (result && result.success) {
-          logToServer('handleLoginSuccess: ログイン成功、?page=app へ遷移します'); // GASログ
+          logToServer('handleLoginSuccess: ログイン成功、ページをリロードします'); // GASログ
 
-          // --- 新しい遷移方法 (<a>タグクリック) ---
-          try {
-              const redirectLink = document.getElementById('redirect-link');
-              if (redirectLink) {
-                  // 遷移先のURLを生成 (GASのベースURL + ?page=app)
-                  const targetUrl = '<?= ScriptApp.getService().getUrl() ?>?page=app';
-                  logToServer('handleLoginSuccess: 遷移先URL設定: ' + targetUrl); 
-                  redirectLink.href = targetUrl;
-                  redirectLink.click(); // リンクをクリックして遷移を試みる
-                  logToServer('handleLoginSuccess: リダイレクトリンククリック実行'); 
-                  // 注: click()直後にshowLoading(false)を呼ぶと遷移が中断される可能性があるので注意
-              } else {
-                  console.error("リダイレクト用リンク要素が見つかりません。");
-                  logToServer('handleLoginSuccess: redirect-link 要素なし'); 
-                  showError('画面遷移に失敗しました。ページを再読み込みしてください。');
-                  showLoading(false); // ローディング解除
-              }
-          } catch (redirectError) {
-               console.error("リダイレクトエラー:", redirectError);
-               logToServer('handleLoginSuccess: リダイレクト処理エラー - ' + redirectError.toString()); 
-               showError('画面遷移中にエラーが発生しました。');
-               showLoading(false); // ローディング解除
-          }
+          // --- 画面遷移処理を削除し、リロードに変更 ★★★ ---
+          // try { ... redirectLink.click(); ... } catch ... のブロックを削除またはコメントアウト
+          
+          // 代わりにページをリロードする
+          window.location.reload(); 
           // --- ここまで変更 ---
 
+          // リロードするので、ローディング解除やメッセージ表示は不要になることが多い
+          // showLoading(false); 
+          // showMessage('ログイン成功。画面を読み込んでいます...', 'success');
+
         } else {
-          // ログイン失敗時の処理
+          // ログイン失敗時の処理 (変更なし)
           const message = result?.message || 'ログインに失敗しました。';
           logToServer('handleLoginSuccess: ログイン失敗 - ' + message); // GASログ
           showLoading(false);
           showError(message);
         }
       }
+      
 
       // ログインエラー時の処理
       function handleLoginError(error) {
