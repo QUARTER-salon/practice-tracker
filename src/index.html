@@ -150,27 +150,36 @@
 
       // --- 共通関数 ---
 
-            // ログイン成功時の処理 ★★★ 修正箇所 ★★★
-            function handleLoginSuccess(result) {
-        logToServer('handleLoginSuccess: 開始, success=' + result?.success); // GASログ
+      // ログイン成功時の処理 ★★★ 修正箇所 ★★★
+      function handleLoginSuccess(result) {
+        logToServer('handleLoginSuccess: 開始, success=' + result?.success); 
         if (result && result.success) {
-          logToServer('handleLoginSuccess: ログイン成功、ページをリロードします'); // GASログ
+          logToServer('handleLoginSuccess: ログイン成功、ベースURLへ遷移します'); 
 
-          // --- 画面遷移処理を削除し、リロードに変更 ★★★ ---
-          // try { ... redirectLink.click(); ... } catch ... のブロックを削除またはコメントアウト
-          
-          // 代わりにページをリロードする
-          window.location.reload(); 
+          // --- パラメータなしのURLへ遷移する ★★★ ---
+          try {
+              // WebアプリのベースURLを取得（末尾に /exec がつく）
+              const baseUrl = '<?= ScriptApp.getService().getUrl() ?>';
+              logToServer('handleLoginSuccess: 遷移先URL設定: ' + baseUrl); 
+              
+              // assign を使って現在のページを置き換える形で遷移
+              window.location.assign(baseUrl); 
+              logToServer('handleLoginSuccess: assign 実行'); 
+              
+              // assign 実行後は基本的に即座に遷移が始まるので、
+              // showLoading(false) は不要なことが多い（遷移前に実行されると表示がちらつく可能性）
+          } catch (redirectError) {
+               console.error("リダイレクトエラー:", redirectError);
+               logToServer('handleLoginSuccess: リダイレクト処理エラー - ' + redirectError.toString()); 
+               showError('画面遷移中にエラーが発生しました。');
+               showLoading(false); // エラー時はローディング解除
+          }
           // --- ここまで変更 ---
-
-          // リロードするので、ローディング解除やメッセージ表示は不要になることが多い
-          // showLoading(false); 
-          // showMessage('ログイン成功。画面を読み込んでいます...', 'success');
 
         } else {
           // ログイン失敗時の処理 (変更なし)
           const message = result?.message || 'ログインに失敗しました。';
-          logToServer('handleLoginSuccess: ログイン失敗 - ' + message); // GASログ
+          logToServer('handleLoginSuccess: ログイン失敗 - ' + message); 
           showLoading(false);
           showError(message);
         }

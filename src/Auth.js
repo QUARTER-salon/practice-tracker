@@ -31,7 +31,7 @@ function checkSession() {
 }
 
 /**
- * セッションにユーザー情報を保存する
+ * セッションにユーザー情報を保存し、ログイン状態フラグを設定する
  * 
  * @param {Object} userInfo - 保存するユーザー情報オブジェクト
  */
@@ -39,32 +39,42 @@ function setSession(userInfo) {
   const userProperties = PropertiesService.getUserProperties();
   try {
     const sessionJson = JSON.stringify(userInfo);
-    Logger.log('setSession: ユーザー情報をセッションに保存 - ' + sessionJson); // ★デバッグログ追加
+    Logger.log('setSession: ユーザー情報をセッションに保存 - ' + sessionJson); 
     userProperties.setProperty('session', sessionJson);
+    
+    // ★★★ ログイン状態フラグを UserProperties に保存 ★★★
+    userProperties.setProperty('loggedIn', 'true'); 
+    Logger.log('setSession: loggedIn フラグを true に設定');
+
   } catch (e) {
     console.error('セッション情報の保存に失敗しました: ' + e);
-    Logger.log('setSession: セッション保存エラー - ' + e.toString()); // ★デバッグログ追加
+    Logger.log('setSession: セッション保存エラー - ' + e.toString()); 
   }
 }
 
 /**
- * セッションからログアウトする（セッション情報を削除する）
+ * セッションからログアウトする（セッション情報とログインフラグを削除する）
  * 
  * @return {Object} ログアウト処理の結果 { success: boolean, message?: string }
  */
 function logout() {
   try {
     const userProperties = PropertiesService.getUserProperties();
-    Logger.log('logout: セッション削除実行'); // ★デバッグログ追加
+    Logger.log('logout: セッション削除実行'); 
     userProperties.deleteProperty('session');
+
+    // ★★★ ログイン状態フラグを UserProperties から削除 ★★★
+    userProperties.deleteProperty('loggedIn');
+    Logger.log('logout: loggedIn フラグを削除');
     
     return { success: true }; 
   } catch (e) {
     console.error('ログアウトエラー: ' + e);
-    Logger.log('logout: ログアウトエラー - ' + e.toString()); // ★デバッグログ追加
+    Logger.log('logout: ログアウトエラー - ' + e.toString()); 
     return { success: false, message: 'ログアウト処理中にエラーが発生しました: ' + e.toString() };
   }
 }
+
 
 /**
  * Googleアカウント認証でログインを試みる
@@ -82,18 +92,16 @@ function loginWithGoogle() {
       return { success: false, message: 'Googleアカウント情報の取得に失敗しました。' };
     }
     
-    const userInfo = findUserByEmail(userEmail); // findUserByEmail内でログ出力
+    const userInfo = findUserByEmail(userEmail); 
     
     if (!userInfo) {
       return { success: false, message: 'スタッフ情報が見つかりません。システム管理者に連絡してください。' };
     }
     
-    // ★★★ リダイレクトフラグを追加 ★★★
-    userInfo.redirectToApp = true; 
-    Logger.log('loginWithGoogle: redirectToApp フラグを userInfo に追加');
-
-    // セッションにユーザー情報を保存
-    setSession(userInfo); // setSession内でログ出力
+    // --- userInfo.redirectToApp = true; の行を削除 ---
+    
+    // セッションにユーザー情報を保存 (setSession内で loggedIn フラグも設定される)
+    setSession(userInfo); 
     
     Logger.log('loginWithGoogle: Googleログイン成功'); 
     return { 
@@ -122,24 +130,22 @@ function loginWithCredentials(empId, password) {
       return { success: false, message: '社員番号とパスワードを入力してください。' };
     }
     
-    const userInfo = findUserByEmpId(empId); // findUserByEmpId内でログ出力
+    const userInfo = findUserByEmpId(empId); 
     
     if (!userInfo) {
       return { success: false, message: 'スタッフ情報が見つかりません。' };
     }
     
     Logger.log('loginWithCredentials: パスワード検証開始 - 社員番号=' + empId + ', 入力パスワード=' + password); 
-    if (!validatePassword(empId, password)) { // validatePassword内でログ出力
+    if (!validatePassword(empId, password)) { 
       Logger.log('loginWithCredentials: パスワード検証失敗'); 
       return { success: false, message: '社員番号またはパスワードが正しくありません。' };
     }
 
-    // ★★★ リダイレクトフラグを追加 ★★★
-    userInfo.redirectToApp = true; 
-    Logger.log('loginWithCredentials: redirectToApp フラグを userInfo に追加');
+    // --- userInfo.redirectToApp = true; の行を削除 ---
 
-    // セッションにユーザー情報を保存
-    setSession(userInfo); // setSession内でログ出力
+    // セッションにユーザー情報を保存 (setSession内で loggedIn フラグも設定される)
+    setSession(userInfo); 
     
     Logger.log('loginWithCredentials: ID/PWログイン成功'); 
     return { 
