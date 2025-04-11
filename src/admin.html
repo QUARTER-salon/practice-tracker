@@ -37,21 +37,24 @@
       <!-- 店舗管理タブパネル -->
       <div id="panel-store" class="tab-panel active">
         <h2>店舗管理</h2>
-        
         <div class="admin-content">
           <div class="admin-form">
-            <h3>店舗追加</h3>
+            <!-- ★ 見出しを変更 ★ -->
+            <h3 id="store-form-title">店舗追加</h3> 
             <form id="store-form">
               <div class="form-group">
                 <label for="store-name">店舗名</label>
                 <input type="text" id="store-name" name="storeName" required>
+                <!-- ★ 編集中の元の名前を保持する隠しフィールド ★ -->
+                <input type="hidden" id="store-edit-original-name"> 
               </div>
               <div class="form-actions">
-                <button type="submit" class="btn btn-primary">追加</button>
+                <!-- ★ ボタンのIDと初期テキストを変更 ★ -->
+                <button type="submit" id="store-submit-btn" class="btn btn-primary">追加</button>
+                <button type="button" id="store-cancel-btn" class="btn hidden">キャンセル</button> 
               </div>
             </form>
           </div>
-          
           <div class="admin-list">
             <h3>店舗一覧</h3>
             <div class="list-container">
@@ -59,7 +62,8 @@
                 <thead>
                   <tr>
                     <th>店舗名</th>
-                    <th>操作</th>
+                    <!-- ★ 操作列の幅を少し広げる想定（任意） ★ -->
+                    <th style="width: 120px;">操作</th> 
                   </tr>
                 </thead>
                 <tbody>
