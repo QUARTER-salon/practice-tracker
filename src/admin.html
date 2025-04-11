@@ -78,21 +78,24 @@
       <!-- 役職管理タブパネル -->
       <div id="panel-role" class="tab-panel">
         <h2>役職管理</h2>
-        
         <div class="admin-content">
           <div class="admin-form">
-            <h3>役職追加</h3>
+            <!-- ★ 見出しID変更 ★ -->
+            <h3 id="role-form-title">役職追加</h3>
             <form id="role-form">
               <div class="form-group">
                 <label for="role-name">役職名</label>
                 <input type="text" id="role-name" name="roleName" required>
+                <!-- ★ 編集中の元の名前を保持する隠しフィールド ★ -->
+                <input type="hidden" id="role-edit-original-name">
               </div>
               <div class="form-actions">
-                <button type="submit" class="btn btn-primary">追加</button>
+                <!-- ★ ボタンIDと初期テキスト変更、キャンセルボタン追加 ★ -->
+                <button type="submit" id="role-submit-btn" class="btn btn-primary">追加</button>
+                <button type="button" id="role-cancel-btn" class="btn hidden">キャンセル</button>
               </div>
             </form>
           </div>
-          
           <div class="admin-list">
             <h3>役職一覧</h3>
             <div class="list-container">
@@ -100,7 +103,8 @@
                 <thead>
                   <tr>
                     <th>役職名</th>
-                    <th>操作</th>
+                    <!-- ★ 操作列の幅指定 (店舗と合わせる) ★ -->
+                    <th style="width: 120px;">操作</th>
                   </tr>
                 </thead>
                 <tbody>
