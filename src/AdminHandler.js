@@ -924,6 +924,134 @@ function addTechCategory(categoryName, rolesString) {
 }
 
 /**
+ * 技術カテゴリーを更新する
+ * @param {string} originalName - 更新前のカテゴリー名
+ * @param {string} newName - 更新後の新しいカテゴリー名
+ * @param {string} newRolesString - 更新後の対象役職 (カンマ区切り文字列 or "全て")
+ * @return {Object} 結果 { success: boolean, message?: string }
+ */
+function updateTechCategory(originalName, newName, newRolesString) {
+  Logger.log(`updateTechCategory: 開始 - 元:[${originalName}], 新:[${newName}, ${newRolesString}]`);
+  try {
+    if (!checkAdminAccess()) { return { success: false, message: '管理者権限が必要です。' }; }
+    if (!originalName || !newName || !newRolesString ||
+        typeof originalName !== 'string' || typeof newName !== 'string' || typeof newRolesString !== 'string' ||
+        originalName.trim() === '' || newName.trim() === '' || newRolesString.trim() === '') {
+        Logger.log('updateTechCategory: 引数不正');
+        return { success: false, message: '更新前後のカテゴリー名と対象役職が必要です。' };
+    }
+    originalName = originalName.trim();
+    newName = newName.trim();
+    newRolesString = newRolesString.trim();
+
+    // 名前と役職が両方とも変更ない場合のみスキップ（要元の役職情報取得）
+    // if (originalName.toLowerCase() === newName.toLowerCase() && originalRolesString === newRolesString) {
+    //     Logger.log('updateTechCategory: 情報に変更なし');
+    //     return { success: true, message: 'カテゴリー情報に変更はありませんでした。' };
+    // }
+
+    const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+    const categorySheet = ss.getSheetByName(TECH_CATEGORY_SHEET_NAME);
+    if (!categorySheet) {
+      Logger.log('updateTechCategory: カテゴリーマスターシートが見つかりません。');
+      return { success: false, message: '技術カテゴリーマスターシートが見つかりません。' };
+    }
+    const categoryData = categorySheet.getDataRange().getValues();
+    const headers = categoryData[0];
+    const nameIndex = headers.indexOf('カテゴリー名');
+    const rolesIndex = headers.indexOf('対象役職');
+    if (nameIndex === -1 || rolesIndex === -1) {
+      Logger.log('updateTechCategory: カテゴリーマスター形式不正');
+      return { success: false, message: '技術カテゴリーマスターシートの形式が正しくありません。' };
+    }
+
+    // 更新対象行特定 & 新しい名前の重複チェック
+    let originalRowIndex = -1;
+    let newNameExists = false;
+    let originalRolesString = ''; // 元の役職文字列を保持
+    for (let i = 1; i < categoryData.length; i++) {
+      const currentName = categoryData[i][nameIndex] ? String(categoryData[i][nameIndex]).trim() : '';
+      if (currentName.toLowerCase() === originalName.toLowerCase()) {
+        originalRowIndex = i + 1;
+        originalRolesString = categoryData[i][rolesIndex] ? String(categoryData[i][rolesIndex]).trim() : ''; // 元の役職を取得
+      }
+      if (currentName.toLowerCase() === newName.toLowerCase() && (i + 1) !== originalRowIndex) {
+          newNameExists = true;
+      }
+    }
+
+    if (originalRowIndex === -1) {
+      Logger.log('updateTechCategory: 更新対象なし');
+      return { success: false, message: `更新対象のカテゴリー「${originalName}」が見つかりません。` };
+    }
+    if (newNameExists) {
+      Logger.log('updateTechCategory: 新しいカテゴリー名重複');
+      return { success: false, message: `新しいカテゴリー名「${newName}」は既に存在します。` };
+    }
+    // 変更がないかチェック
+    if (originalName.toLowerCase() === newName.toLowerCase() && originalRolesString === newRolesString) {
+        Logger.log('updateTechCategory: 情報に変更なし');
+        return { success: true, message: 'カテゴリー情報に変更はありませんでした。' };
+    }
+
+
+    let updateMessages = [];
+
+    // 1. カテゴリーマスター更新
+    try {
+      categorySheet.getRange(originalRowIndex, nameIndex + 1).setValue(newName);
+      categorySheet.getRange(originalRowIndex, rolesIndex + 1).setValue(newRolesString);
+      Logger.log('updateTechCategory: カテゴリーマスター更新完了');
+      updateMessages.push('カテゴリーマスター');
+    } catch (e) {
+      Logger.log('updateTechCategory: ★★★ カテゴリーマスター更新エラー ★★★: ' + e);
+      return { success: false, message: 'カテゴリーマスターの更新中にエラーが発生しました: ' + e.message };
+    }
+
+    // 2. 詳細技術項目マスターのカテゴリー名を更新 (名前が変更された場合のみ)
+    if (originalName.toLowerCase() !== newName.toLowerCase()) {
+        try {
+            const detailSheet = ss.getSheetByName(TECH_DETAIL_SHEET_NAME);
+            if (detailSheet) {
+                const detailData = detailSheet.getDataRange().getValues();
+                const detailHeaders = detailData[0];
+                const detailCategoryIndex = detailHeaders.indexOf('カテゴリー');
+                if (detailCategoryIndex !== -1) {
+                    let updatedCount = 0;
+                    for (let i = 1; i < detailData.length; i++) {
+                        if (detailData[i][detailCategoryIndex] && String(detailData[i][detailCategoryIndex]).trim().toLowerCase() === originalName.toLowerCase()) {
+                            detailSheet.getRange(i + 1, detailCategoryIndex + 1).setValue(newName);
+                            updatedCount++;
+                        }
+                    }
+                    if (updatedCount > 0) {
+                        Logger.log(`updateTechCategory: 詳細技術項目マスターのカテゴリー更新完了 (${updatedCount}件)`);
+                        updateMessages.push('詳細技術項目');
+                    }
+                } else { Logger.log('updateTechCategory: 詳細技術項目マスターに「カテゴリー」列なし'); }
+            } else { Logger.log('updateTechCategory: 詳細技術項目マスターなし'); }
+        } catch (e) {
+            Logger.log(`updateTechCategory: 詳細技術項目マスター更新エラー（無視）: ${e}`);
+            updateMessages.push('詳細技術項目(エラー)');
+        }
+    } else {
+         Logger.log('updateTechCategory: カテゴリー名に変更がないため、詳細技術項目マスターの更新はスキップ');
+    }
+
+    const message = updateMessages.length > 0
+        ? `技術カテゴリー情報が更新されました。\n関連シート: (${updateMessages.join(', ')})`
+        : '技術カテゴリー情報が更新されました。'; // 基本的にマスターは更新されるはず
+    return { success: true, message: message };
+
+  } catch (e) {
+    console.error('技術カテゴリー更新全体エラー (updateTechCategory): ' + e);
+    Logger.log('updateTechCategory: 全体エラー - ' + e.toString() + '\n' + e.stack);
+    return { success: false, message: '技術カテゴリー情報の更新中に予期せぬエラーが発生しました: ' + e.message };
+  }
+}
+
+
+/**
  * 技術カテゴリーを削除する
  * @param {string} categoryName - 削除するカテゴリー名
  * @return {Object} 結果 { success: boolean, message?: string }
@@ -972,14 +1100,14 @@ function deleteTechCategory(categoryName) {
 
     // TODO: 関連する詳細技術項目をどうするか？ (削除 or カテゴリを空にする or 警告)
 
-    return { success: true, message: '技術カテゴリー「' + categoryName + '」が削除されました。' };
+    return { success: true, message: '技術カテゴリー「' + categoryName + '」が削除されました。\n※関連する詳細技術項目は削除されません。' }; // メッセージ変更
   } catch (e) {
       console.error('技術カテゴリー削除エラー: ' + e);
       Logger.log('deleteTechCategory: エラー - ' + e.toString() + '\n' + e.stack);
       return { success: false, message: '技術カテゴリーの削除中にエラーが発生しました: ' + e.message };
    }
 }
-// TODO: updateTechCategory
+
 
 // ==================================
 // --- 詳細技術項目管理 ---
@@ -1101,6 +1229,107 @@ function addTechDetail(detailName, categoryName, rolesString) {
 }
 
 /**
+ * 詳細技術項目を更新する
+ * @param {string} originalName - 更新前の項目名
+ * @param {string} originalCategory - 更新前のカテゴリー名
+ * @param {string} newName - 更新後の新しい項目名
+ * @param {string} newCategory - 更新後の新しいカテゴリー名
+ * @param {string} newRolesString - 更新後の対象役職
+ * @return {Object} 結果 { success: boolean, message?: string }
+ */
+function updateTechDetail(originalName, originalCategory, newName, newCategory, newRolesString) {
+  Logger.log(`updateTechDetail: 開始 - 元:[${originalName}, ${originalCategory}], 新:[${newName}, ${newCategory}, ${newRolesString}]`);
+  try {
+    if (!checkAdminAccess()) { return { success: false, message: '管理者権限が必要です。' }; }
+    if (!originalName || !originalCategory || !newName || !newCategory || !newRolesString ||
+        typeof originalName !== 'string' || typeof originalCategory !== 'string' ||
+        typeof newName !== 'string' || typeof newCategory !== 'string' || typeof newRolesString !== 'string' ||
+        originalName.trim() === '' || originalCategory.trim() === '' ||
+        newName.trim() === '' || newCategory.trim() === '' || newRolesString.trim() === '') {
+        Logger.log('updateTechDetail: 引数不正');
+        return { success: false, message: '更新前後の項目名、カテゴリー、対象役職が必要です。' };
+    }
+    originalName = originalName.trim();
+    originalCategory = originalCategory.trim();
+    newName = newName.trim();
+    newCategory = newCategory.trim();
+    newRolesString = newRolesString.trim();
+
+    const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+    const detailSheet = ss.getSheetByName(TECH_DETAIL_SHEET_NAME);
+    if (!detailSheet) {
+        Logger.log('updateTechDetail: 詳細技術項目マスターシートが見つかりません。');
+        return { success: false, message: '詳細技術項目マスターシートが見つかりません。' };
+    }
+    const detailData = detailSheet.getDataRange().getValues();
+    const headers = detailData[0];
+    const nameIndex = headers.indexOf('項目名');
+    const categoryIndex = headers.indexOf('カテゴリー');
+    const rolesIndex = headers.indexOf('対象役職');
+    if (nameIndex === -1 || categoryIndex === -1 || rolesIndex === -1) {
+        Logger.log('updateTechDetail: 詳細技術項目マスターシート形式不正');
+        return { success: false, message: '詳細技術項目マスターシートの形式が正しくありません。' };
+    }
+
+    // 更新対象行特定 & 新しい組み合わせの重複チェック & 元の役職取得
+    let originalRowIndex = -1;
+    let newCombinationExists = false;
+    let originalRolesString = ''; // 元の役職を保持
+    for (let i = 1; i < detailData.length; i++) {
+        const currentName = detailData[i][nameIndex] ? String(detailData[i][nameIndex]).trim() : '';
+        const currentCategory = detailData[i][categoryIndex] ? String(detailData[i][categoryIndex]).trim() : '';
+
+        if (currentName.toLowerCase() === originalName.toLowerCase() && currentCategory.toLowerCase() === originalCategory.toLowerCase()) {
+            originalRowIndex = i + 1;
+            originalRolesString = detailData[i][rolesIndex] ? String(detailData[i][rolesIndex]).trim() : ''; // 元の役職を取得
+        }
+        if (currentName.toLowerCase() === newName.toLowerCase() && currentCategory.toLowerCase() === newCategory.toLowerCase() && (i + 1) !== originalRowIndex) {
+            newCombinationExists = true;
+        }
+    }
+
+    if (originalRowIndex === -1) {
+        Logger.log('updateTechDetail: 更新対象なし');
+        return { success: false, message: `更新対象の詳細技術項目「${originalName} (${originalCategory})」が見つかりません。` };
+    }
+    if (newCombinationExists) {
+        Logger.log('updateTechDetail: 新しい組み合わせ重複');
+        return { success: false, message: `更新後の詳細技術項目「${newName} (${newCategory})」は既に存在します。` };
+    }
+    // 変更がないかチェック
+    if (originalName.toLowerCase() === newName.toLowerCase() &&
+        originalCategory.toLowerCase() === newCategory.toLowerCase() &&
+        originalRolesString === newRolesString) {
+        Logger.log('updateTechDetail: 情報に変更なし');
+        return { success: true, message: '詳細技術項目情報に変更はありませんでした。' };
+    }
+
+
+    // 1. 詳細技術項目マスター更新
+    try {
+        detailSheet.getRange(originalRowIndex, nameIndex + 1).setValue(newName);
+        detailSheet.getRange(originalRowIndex, categoryIndex + 1).setValue(newCategory);
+        detailSheet.getRange(originalRowIndex, rolesIndex + 1).setValue(newRolesString);
+        Logger.log('updateTechDetail: 詳細技術項目マスター更新完了');
+    } catch (e) {
+        Logger.log('updateTechDetail: ★★★ 詳細技術項目マスター更新エラー ★★★: ' + e);
+        return { success: false, message: '詳細技術項目マスターの更新中にエラーが発生しました: ' + e.message };
+    }
+
+    // TODO: 練習記録シートの詳細技術項目名を更新するかどうか？ -> 今回は見送り
+    // 現状ではマスターデータのみ更新
+
+    return { success: true, message: `詳細技術項目が「${newName} (${newCategory})」に更新されました。` };
+
+  } catch (e) {
+    console.error('詳細技術項目更新全体エラー (updateTechDetail): ' + e);
+    Logger.log('updateTechDetail: 全体エラー - ' + e.toString() + '\n' + e.stack);
+    return { success: false, message: '詳細技術項目情報の更新中に予期せぬエラーが発生しました: ' + e.message };
+  }
+}
+
+
+/**
  * 詳細技術項目を削除する
  * @param {string} detailName - 削除する項目名
  * @param {string} categoryName - 関連するカテゴリー名
@@ -1152,7 +1381,7 @@ function deleteTechDetail(detailName, categoryName) {
       return { success: false, message: '詳細技術項目の削除中にエラーが発生しました: ' + e.message };
    }
 }
-// TODO: updateTechDetail
+
 
 // ==================================
 // --- ウィッグ在庫管理 ---
