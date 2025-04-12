@@ -90,9 +90,9 @@
     *   `src/Code.gs` 内の `IS_PRODUCTION` フラグを `false` に設定し、`TEST_SPREADSHEET_ID` にテスト用スプレッドシートIDを設定します。
         ```javascript
         // 例: src/Code.gs
-        const IS_PRODUCTION = false; 
+        const IS_PRODUCTION = false;
         const PROD_SPREADSHEET_ID = '【本番用スプレッドシートID】';
-        const TEST_SPREADSHEET_ID = '【テスト用スプレッドシートID】'; 
+        const TEST_SPREADSHEET_ID = '【テスト用スプレッドシートID】';
         const SPREADSHEET_ID = IS_PRODUCTION ? PROD_SPREADSHEET_ID : TEST_SPREADSHEET_ID;
         // ... シート名定数 ...
         ```
@@ -126,23 +126,25 @@
 *   **目的:** 要件定義に基づき、未実装の機能を実装し、連携動作を確認する。
 *   **現在のサブステップ:** 管理者画面のCRUD機能実装。
 *   **完了した作業:**
-    *   管理者画面の「店舗管理」タブに編集機能を追加・動作確認済み。
-    *   管理者画面の「役職管理」タブに編集機能を追加・動作確認済み。
-*   **発生中の問題・課題:**
-    *   管理者画面で、**役職以外のリスト（店舗、トレーナー、技術カテゴリ、詳細技術項目、在庫）が表示されない** 問題が発生中。
-    *   **役職編集機能**は、ログ上ではバックエンド処理 (`updateRole`) が成功しているように見えるが、**画面上のリストに更新が反映されない**。
-*   **調査状況:**
-    *   バックエンドの各データ取得関数 (`getStores`, `getAllTrainers` 等) はGAS実行ログで正常完了を確認済み。
-    *   フロントエンド (`admin_script.html`) でのJavaScriptエラーが疑われるが、ブラウザコンソールには明確なエラーが表示されない。
-    *   フロントエンドからバックエンドへのログ出力 (`logMessage`) が機能していない可能性があり、フロントエンド側の処理追跡が困難な状況。
-*   **次のアクション:**
-    1.  フロントエンドから `logMessage` が確実に呼び出せるか、単純なテストで確認する。
-    2.  `logMessage` が機能しない場合、その原因（`Utils.js` のデプロイ漏れ、`google.script.run` 呼び出しの問題など）を特定・修正する。
-    3.  `logMessage` が機能するようになったら、`admin_script.html` の各 `loadXXX` および `displayXXX` 関数のログを詳細に分析し、リスト表示や役職編集反映が失敗する箇所を特定する。
-    4.  特定した箇所のJavaScriptコードを修正する。
-    5.  上記問題解決後、トレーナー管理、技術カテゴリ管理、詳細技術項目管理の編集機能を追加実装する。
-    6.  練習記録画面の動的選択肢ロジックを実装・確認する。
-    7.  ID/PW認証のパスワードハッシュ化を実装する。
+    *   管理者画面の基本的なHTML構造とJavaScript (`admin.html`, `admin_script.html`) を整備。
+    *   各マスターデータのリスト表示機能 (`displayXXXList`) を実装。
+    *   各マスターデータの追加機能 (`addXXX`) と削除機能 (`deleteXXX`) を実装。
+    *   店舗管理 (`Stores`) と役職管理 (`Roles`) の編集機能 (`editXXX`, `updateXXX`) を実装。
+    *   管理者画面の全リスト表示が正常に行われることを確認。追加・削除機能の基本的な動作を確認。
+    *   管理者画面からのログ出力 (`logMessage`) が正常に機能することを確認。
+*   **残っている課題・次のアクション:**
+    1.  **管理者画面の編集機能実装:**
+        *   トレーナー管理 (`Trainers`) の編集機能 (`editTrainer`, `updateTrainer`) を実装する。
+        *   技術カテゴリー管理 (`TechCategories`) の編集機能 (`editTechCategory`, `updateTechCategory`) を実装する。
+        *   詳細技術項目管理 (`TechDetails`) の編集機能 (`editTechDetail`, `updateTechDetail`) を実装する。
+        *   各編集機能において、関連シートの整合性を保つための更新処理を実装する。
+        *   編集モードと追加モードの切り替え（フォームの見出し、ボタンテキスト変更、キャンセルボタン表示など）をフロントエンド (`admin_script.html`) で実装する。
+    2.  **練習記録画面の動的選択肢ロジック実装:** (Step 2 として後回しでも可)
+        *   カテゴリ選択に応じた詳細項目リストの動的表示を実装・確認する。
+        *   トレーナー選択に応じた評価欄・他店舗トレーナー欄の表示制御を実装・確認する。
+    3.  **ID/PW認証のパスワードハッシュ化実装:** (後回しでも可)
+        *   `Auth.js` の `validatePassword` 関数等を修正し、パスワードハッシュライブラリ (`BcryptGS` 等) を利用した検証を実装する。
+        *   パスワード設定・変更機能が必要であれば別途実装する。
 
 ### **【進捗：未着手】Step 2: UI/UX 調整とエラーハンドリング強化**
 
