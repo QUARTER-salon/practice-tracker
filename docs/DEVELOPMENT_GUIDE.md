@@ -124,25 +124,35 @@
 ### **【進捗：実施中】Step 1: 機能実装と連携テスト**
 
 *   **目的:** 要件定義に基づき、未実装の機能を実装し、連携動作を確認する。
-*   **現在のサブステップ:** 管理者画面のCRUD機能実装。
+*   **現在のサブステップ:** 管理者画面のCRUD機能実装（Update機能のデバッグ中）。
 *   **完了した作業:**
     *   管理者画面の基本的なHTML構造とJavaScript (`admin.html`, `admin_script.html`) を整備。
     *   各マスターデータのリスト表示機能 (`displayXXXList`) を実装。
     *   各マスターデータの追加機能 (`addXXX`) と削除機能 (`deleteXXX`) を実装。
-    *   店舗管理 (`Stores`) と役職管理 (`Roles`) の編集機能 (`editXXX`, `updateXXX`) を実装。
-    *   管理者画面の全リスト表示が正常に行われることを確認。追加・削除機能の基本的な動作を確認。
+    *   店舗管理 (`Stores`) と役職管理 (`Roles`) の編集機能 (`editXXX`, `updateXXX`) を実装し、正常動作を確認。
+    *   トレーナー、カテゴリー、詳細項目の編集機能 (`editXXX`, `updateXXX`) を実装。リスト表示、フォームへのデータセットは動作。
     *   管理者画面からのログ出力 (`logMessage`) が正常に機能することを確認。
+*   **現在の問題点・デバッグ中の課題:**
+    1.  **管理者画面 - 更新処理の不具合:**
+        *   トレーナー、カテゴリー、詳細項目の編集モードで「更新」ボタンをクリックすると、「処理中」のまま応答がなくなり、ブラウザコンソールに `Uncaught TypeError: Cannot read properties of undefined (reading 'apply')` エラーが発生する。
+        *   これは、`admin_script.html` の `handleXXXSubmit` 関数内で、`google.script.run` でサーバー側関数を呼び出す際に、動的に指定した関数名が見つからないことが原因。
+        *   `if/else if` を使って明示的に関数を呼び出すように修正したが、依然としてエラーが発生している。
+    2.  **管理者画面 - 初期化エラー:**
+        *   ページ読み込み時に「管理画面の初期化に失敗しました。」というメッセージが表示されることがある。ブラウザコンソールには `[Report Only] Refused to frame ... frame-ancestors 'self'` というCSP関連のエラーも記録されているが、これが直接的な原因かは不明。`DOMContentLoaded` 内の初期化処理 (`setupTabs`, `loadAllData` など) でエラーが発生している可能性がある。
 *   **残っている課題・次のアクション:**
-    1.  **管理者画面の編集機能実装:**
-        *   トレーナー管理 (`Trainers`) の編集機能 (`editTrainer`, `updateTrainer`) を実装する。
-        *   技術カテゴリー管理 (`TechCategories`) の編集機能 (`editTechCategory`, `updateTechCategory`) を実装する。
-        *   詳細技術項目管理 (`TechDetails`) の編集機能 (`editTechDetail`, `updateTechDetail`) を実装する。
-        *   各編集機能において、関連シートの整合性を保つための更新処理を実装する。
-        *   編集モードと追加モードの切り替え（フォームの見出し、ボタンテキスト変更、キャンセルボタン表示など）をフロントエンド (`admin_script.html`) で実装する。
-    2.  **練習記録画面の動的選択肢ロジック実装:** (Step 2 として後回しでも可)
+    1.  **管理者画面 - 更新処理のデバッグ:**
+        *   `handleXXXSubmit` 関数内の `google.script.run` 呼び出し部分を再度検証する。特に `serverFunction` 変数の値と、`AdminHandler.js` の関数名（`updateTrainer`, `addTrainer` 等）が完全に一致しているか再確認する。
+        *   `google.script.run.関数名()` の形式で直接呼び出す方法も試す。
+        *   GASの実行ログとブラウザコンソールのログを詳細に確認し、エラー発生箇所を特定する。
+    2.  **管理者画面 - 初期化エラーの調査:**
+        *   `admin_script.html` の `DOMContentLoaded` 内の各初期化関数の前後に `logToServer` を追加し、どの処理でエラーが発生しているか特定する。
+        *   CSPエラーが関連しているか調査する（通常、`executeAs=USER_ACCESSING` であれば問題になりにくいが、念のため確認）。
+    3.  **管理者画面 - キャンセルボタンの有効化:**
+        *   `admin_script.html` の `setupTrainerCancelButton`, `setupCategoryCancelButton`, `setupDetailCancelButton` のコメントアウトを解除し、初期化時に呼び出す。
+    4.  **練習記録画面の動的選択肢ロジック実装:** (管理者画面の問題解決後)
         *   カテゴリ選択に応じた詳細項目リストの動的表示を実装・確認する。
         *   トレーナー選択に応じた評価欄・他店舗トレーナー欄の表示制御を実装・確認する。
-    3.  **ID/PW認証のパスワードハッシュ化実装:** (後回しでも可)
+    5.  **ID/PW認証のパスワードハッシュ化実装:** (後回しでも可)
         *   `Auth.js` の `validatePassword` 関数等を修正し、パスワードハッシュライブラリ (`BcryptGS` 等) を利用した検証を実装する。
         *   パスワード設定・変更機能が必要であれば別途実装する。
 
