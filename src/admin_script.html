@@ -708,8 +708,11 @@
                     // ★ TODO: 編集ボタンを追加
                     const editButton = document.createElement('button');
                     editButton.textContent = '編集';
-                    editButton.classList.add('btn', 'btn-small', 'hidden'); // ★ 現状は非表示
-                    // editButton.onclick = function() { editTrainer(trainer.name, trainer.store); };
+                    // ★ 'hidden' クラスが付いていないことを確認
+                    editButton.classList.add('btn', 'btn-small');
+                    // ★ onclickイベントを設定
+                    editButton.onclick = function() { editTrainer(trainer.name, trainer.store); };
+                    // ★ セルに追加
                     actionsCell.appendChild(editButton);
 
                     // ★ 削除ボタンも追加
