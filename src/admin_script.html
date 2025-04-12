@@ -773,56 +773,66 @@
         logToServer('handleTrainerFormSubmit: 開始');
         const trainerNameInput = document.getElementById('trainer-name');
         const storeSelect = document.getElementById('trainer-store');
-        const trainerName = trainerNameInput.value.trim();
-        const storeName = storeSelect.value;
+        const originalNameInput = document.getElementById('trainer-edit-original-name'); // ★追加
+        const originalStoreInput = document.getElementById('trainer-edit-original-store'); // ★追加
 
-        if (!trainerName) {
-            showMessage('トレーナー名を入力してください。', 'error'); return;
-        }
-        if (!storeName) {
-            showMessage('所属店舗を選択してください。', 'error'); return;
-        }
+        const newName = trainerNameInput.value.trim();
+        const newStore = storeSelect.value;
+        const originalName = originalNameInput.value.trim(); // ★追加
+        const originalStore = originalStoreInput.value.trim(); // ★追加
 
-        const submitBtn = document.getElementById('trainer-submit-btn'); // ★ ID要確認
+        // --- ▼▼▼ デバッグログと判定確認 ▼▼▼ ---
+        logToServer(`handleTrainerFormSubmit: originalName='${originalName}', originalStore='${originalStore}'`);
+        const isEditing = originalName !== '' && originalStore !== ''; // 元の名前と店舗が空でない場合を編集モードとする
+        logToServer(`handleTrainerFormSubmit: isEditing 判定結果 = ${isEditing}`);
+        // --- ▲▲▲ ここまで ▲▲▲ ---
+
+        if (!newName) { showMessage('トレーナー名を入力してください。', 'error'); return; }
+        if (!newStore) { showMessage('所属店舗を選択してください。', 'error'); return; }
+
+        const submitBtn = document.getElementById('trainer-submit-btn');
         submitBtn.disabled = true;
         submitBtn.textContent = '処理中...';
 
-        // TODO: 編集モードの判定を追加
-        const isEditing = false; // 仮
-
         let serverFunction;
         let args;
+        // --- ▼▼▼ isEditing による分岐を確認 ▼▼▼ ---
         if (isEditing) {
-            // serverFunction = 'updateTrainer';
-            // args = [originalName, originalStore, trainerName, storeName];
-            logToServer('handleTrainerFormSubmit: 編集モード (未実装)');
-            showMessage('トレーナー編集機能は現在利用できません。', 'error'); // 仮
-            submitBtn.disabled = false; submitBtn.textContent = '追加'; // 仮
-            return; // ★ 編集処理未実装のため中断
+            serverFunction = 'updateTrainer'; // 編集モードなら updateTrainer
+            args = [originalName, originalStore, newName, newStore];
+            logToServer(`handleTrainerFormSubmit: 編集モード - original=[${originalName}, ${originalStore}], new=[${newName}, ${newStore}]`);
         } else {
-            serverFunction = 'addTrainer'; // AdminHandler.js
-            args = [trainerName, storeName];
-            logToServer('handleTrainerFormSubmit: 追加モード - name=' + trainerName + ', store=' + storeName);
+            serverFunction = 'addTrainer'; // 追加モードなら addTrainer
+            args = [newName, newStore];
+            logToServer(`handleTrainerFormSubmit: 追加モード - name=${newName}, store=${newStore}`);
         }
+        logToServer(`handleTrainerFormSubmit: 呼び出すサーバー関数: ${serverFunction}`); // 呼び出す関数名もログに
+        // --- ▲▲▲ ここまで ▲▲▲ ---
 
         google.script.run
             .withSuccessHandler(function(result) {
                 logToServer('handleTrainerFormSubmit: SuccessHandler result: ' + JSON.stringify(result));
                 if (result.success) {
-                    showMessage(result.message || 'トレーナーが追加されました。', 'success');
-                    document.getElementById('trainer-form').reset(); // フォームリセット
+                    showMessage(result.message || (isEditing ? 'トレーナー情報が更新されました。' : 'トレーナーが追加されました。'), 'success');
+                    resetTrainerForm(); // フォームリセット
                     loadTrainers(); // リスト再読み込み
                 } else {
-                    showMessage(result.message || 'トレーナーの追加に失敗しました。', 'error');
+                    showMessage(result.message || (isEditing ? 'トレーナー情報の更新に失敗しました。' : 'トレーナーの追加に失敗しました。'), 'error');
                 }
-                 submitBtn.disabled = false; submitBtn.textContent = '追加';
+                 // ボタンを元に戻す（編集/追加モードに応じて）
+                 submitBtn.disabled = false;
+                 const buttonText = document.getElementById('trainer-edit-original-name').value !== '' ? '更新' : '追加'; // 編集モードなら更新、そうでなければ追加
+                 submitBtn.textContent = buttonText;
             })
             .withFailureHandler(function(error) {
                 logToServer('handleTrainerFormSubmit: FailureHandler error: ' + error.toString());
-                showMessage('トレーナーの追加中にエラーが発生しました: ' + error, 'error');
-                submitBtn.disabled = false; submitBtn.textContent = '追加';
+                showMessage((isEditing ? 'トレーナー情報の更新中にエラーが発生しました: ' : 'トレーナーの追加中にエラーが発生しました: ') + error, 'error');
+                 // ボタンを元に戻す
+                 submitBtn.disabled = false;
+                 const buttonText = document.getElementById('trainer-edit-original-name').value !== '' ? '更新' : '追加';
+                 submitBtn.textContent = buttonText;
             })
-            [serverFunction].apply(null, args);
+            [serverFunction].apply(null, args); // serverFunction 変数で呼び出す関数を切り替え
     }
 
 function editTrainer(name, store) {
@@ -989,18 +999,26 @@ function editTrainer(name, store) {
 
     // TODO: editTechCategory, resetCategoryForm, setupCategoryCancelButton
 
-    function handleCategoryFormSubmit(event) {
+       function handleCategoryFormSubmit(event) {
         event.preventDefault();
         logToServer('handleCategoryFormSubmit: 開始');
         const categoryNameInput = document.getElementById('category-name');
-        const categoryName = categoryNameInput.value.trim();
+        const originalNameInput = document.getElementById('category-edit-original-name'); // ★追加
+
+        const newName = categoryNameInput.value.trim();
+        const originalName = originalNameInput.value.trim(); // ★追加
+
+        // --- ▼▼▼ デバッグログと判定確認 ▼▼▼ ---
+        logToServer(`handleCategoryFormSubmit: originalName='${originalName}'`);
+        const isEditing = originalName !== ''; // 元の名前が空でない場合を編集モードとする
+        logToServer(`handleCategoryFormSubmit: isEditing 判定結果 = ${isEditing}`);
+        // --- ▲▲▲ ここまで ▲▲▲ ---
+
         const rolesCheckboxes = document.querySelectorAll('#category-roles-checkboxes input[name="categoryRoles"]:checked');
         const allRolesCheckbox = document.getElementById('category-all-roles');
         let selectedRoles = [];
 
-        if (!categoryName) {
-            showMessage('カテゴリー名を入力してください。', 'error'); return;
-        }
+        if (!newName) { showMessage('カテゴリー名を入力してください。', 'error'); return; }
 
         if (allRolesCheckbox.checked) {
             selectedRoles = ['全て'];
@@ -1010,48 +1028,50 @@ function editTrainer(name, store) {
                 showMessage('対象役職を1つ以上選択するか、「全ての役職」をチェックしてください。', 'error'); return;
             }
         }
-        const rolesString = selectedRoles.join(',');
+        const newRolesString = selectedRoles.join(',');
 
-        const submitBtn = document.getElementById('category-submit-btn'); // ★ ID要確認
+        const submitBtn = document.getElementById('category-submit-btn');
         submitBtn.disabled = true;
         submitBtn.textContent = '処理中...';
 
-        // TODO: 編集モードの判定を追加
-        const isEditing = false; // 仮
-
         let serverFunction;
         let args;
+        // --- ▼▼▼ isEditing による分岐を確認 ▼▼▼ ---
         if (isEditing) {
-            // serverFunction = 'updateTechCategory';
-            // args = [originalName, categoryName, rolesString];
-            logToServer('handleCategoryFormSubmit: 編集モード (未実装)');
-            showMessage('カテゴリー編集機能は現在利用できません。', 'error'); // 仮
-            submitBtn.disabled = false; submitBtn.textContent = '追加'; // 仮
-            return; // ★ 編集処理未実装のため中断
+            serverFunction = 'updateTechCategory'; // 編集モードなら updateTechCategory
+            args = [originalName, newName, newRolesString];
+            logToServer(`handleCategoryFormSubmit: 編集モード - original=${originalName}, new=[${newName}, ${newRolesString}]`);
         } else {
-            serverFunction = 'addTechCategory'; // AdminHandler.js
-            args = [categoryName, rolesString];
-            logToServer('handleCategoryFormSubmit: 追加モード - name=' + categoryName + ', roles=' + rolesString);
+            serverFunction = 'addTechCategory'; // 追加モードなら addTechCategory
+            args = [newName, newRolesString];
+            logToServer(`handleCategoryFormSubmit: 追加モード - name=${newName}, roles=${newRolesString}`);
         }
+        logToServer(`handleCategoryFormSubmit: 呼び出すサーバー関数: ${serverFunction}`);
+        // --- ▲▲▲ ここまで ▲▲▲ ---
 
         google.script.run
             .withSuccessHandler(function(result) {
                 logToServer('handleCategoryFormSubmit: SuccessHandler result: ' + JSON.stringify(result));
                 if (result.success) {
-                    showMessage(result.message || '技術カテゴリーが追加されました。', 'success');
-                    document.getElementById('category-form').reset(); // フォームリセット
-                    // チェックボックスのリセット（reset()だけでは不十分な場合）
-                    document.querySelectorAll('#category-roles-checkboxes input[type="checkbox"]').forEach(cb => cb.checked = false);
+                    showMessage(result.message || (isEditing ? '技術カテゴリー情報が更新されました。' : '技術カテゴリーが追加されました。'), 'success');
+                    resetCategoryForm(); // フォームリセット
                     loadTechCategories(); // リストと選択肢を再読み込み
+                    loadTechDetails(); // 詳細項目のカテゴリが変わる可能性があるので再読み込み
                 } else {
-                    showMessage(result.message || '技術カテゴリーの追加に失敗しました。', 'error');
+                    showMessage(result.message || (isEditing ? '技術カテゴリー情報の更新に失敗しました。' : '技術カテゴリーの追加に失敗しました。'), 'error');
                 }
-                submitBtn.disabled = false; submitBtn.textContent = '追加';
+                // ボタンを元に戻す
+                submitBtn.disabled = false;
+                const buttonText = document.getElementById('category-edit-original-name').value !== '' ? '更新' : '追加';
+                submitBtn.textContent = buttonText;
             })
             .withFailureHandler(function(error) {
                 logToServer('handleCategoryFormSubmit: FailureHandler error: ' + error.toString());
-                showMessage('技術カテゴリーの追加中にエラーが発生しました: ' + error, 'error');
-                submitBtn.disabled = false; submitBtn.textContent = '追加';
+                showMessage((isEditing ? '技術カテゴリー情報の更新中にエラーが発生しました: ' : '技術カテゴリーの追加中にエラーが発生しました: ') + error, 'error');
+                 // ボタンを元に戻す
+                 submitBtn.disabled = false;
+                 const buttonText = document.getElementById('category-edit-original-name').value !== '' ? '更新' : '追加';
+                 submitBtn.textContent = buttonText;
             })
             [serverFunction].apply(null, args);
     }
@@ -1208,23 +1228,31 @@ function editTechCategory(name, rolesString) {
 
     // TODO: editTechDetail, resetDetailForm, setupDetailCancelButton
 
-    function handleDetailFormSubmit(event) {
+        function handleDetailFormSubmit(event) {
         event.preventDefault();
         logToServer('handleDetailFormSubmit: 開始');
         const detailNameInput = document.getElementById('detail-name');
         const categorySelect = document.getElementById('detail-category');
-        const detailName = detailNameInput.value.trim();
-        const categoryName = categorySelect.value;
+        const originalNameInput = document.getElementById('detail-edit-original-name'); // ★追加
+        const originalCategoryInput = document.getElementById('detail-edit-original-category'); // ★追加
+
+        const newName = detailNameInput.value.trim();
+        const newCategory = categorySelect.value;
+        const originalName = originalNameInput.value.trim(); // ★追加
+        const originalCategory = originalCategoryInput.value.trim(); // ★追加
+
+        // --- ▼▼▼ デバッグログと判定確認 ▼▼▼ ---
+        logToServer(`handleDetailFormSubmit: originalName='${originalName}', originalCategory='${originalCategory}'`);
+        const isEditing = originalName !== '' && originalCategory !== ''; // 元の名前とカテゴリが空でない場合を編集モードとする
+        logToServer(`handleDetailFormSubmit: isEditing 判定結果 = ${isEditing}`);
+        // --- ▲▲▲ ここまで ▲▲▲ ---
+
         const rolesCheckboxes = document.querySelectorAll('#detail-roles-checkboxes input[name="detailRoles"]:checked');
         const allRolesCheckbox = document.getElementById('detail-all-roles');
         let selectedRoles = [];
 
-        if (!detailName) {
-            showMessage('項目名を入力してください。', 'error'); return;
-        }
-        if (!categoryName) {
-            showMessage('カテゴリーを選択してください。', 'error'); return;
-        }
+        if (!newName) { showMessage('項目名を入力してください。', 'error'); return; }
+        if (!newCategory) { showMessage('カテゴリーを選択してください。', 'error'); return; }
 
         if (allRolesCheckbox.checked) {
             selectedRoles = ['全て'];
@@ -1234,48 +1262,49 @@ function editTechCategory(name, rolesString) {
                 showMessage('対象役職を1つ以上選択するか、「全ての役職」をチェックしてください。', 'error'); return;
             }
         }
-        const rolesString = selectedRoles.join(',');
+        const newRolesString = selectedRoles.join(',');
 
-        const submitBtn = document.getElementById('detail-submit-btn'); // ★ ID要確認
+        const submitBtn = document.getElementById('detail-submit-btn');
         submitBtn.disabled = true;
         submitBtn.textContent = '処理中...';
 
-        // TODO: 編集モードの判定を追加
-        const isEditing = false; // 仮
-
         let serverFunction;
         let args;
+        // --- ▼▼▼ isEditing による分岐を確認 ▼▼▼ ---
         if (isEditing) {
-            // serverFunction = 'updateTechDetail';
-            // args = [originalName, originalCategory, detailName, categoryName, rolesString];
-            logToServer('handleDetailFormSubmit: 編集モード (未実装)');
-            showMessage('詳細項目編集機能は現在利用できません。', 'error'); // 仮
-            submitBtn.disabled = false; submitBtn.textContent = '追加'; // 仮
-            return; // ★ 編集処理未実装のため中断
+            serverFunction = 'updateTechDetail'; // 編集モードなら updateTechDetail
+            args = [originalName, originalCategory, newName, newCategory, newRolesString];
+            logToServer(`handleDetailFormSubmit: 編集モード - original=[${originalName}, ${originalCategory}], new=[${newName}, ${newCategory}, ${newRolesString}]`);
         } else {
-            serverFunction = 'addTechDetail'; // AdminHandler.js
-            args = [detailName, categoryName, rolesString];
-            logToServer('handleDetailFormSubmit: 追加モード - name=' + detailName + ', category=' + categoryName + ', roles=' + rolesString);
+            serverFunction = 'addTechDetail'; // 追加モードなら addTechDetail
+            args = [newName, newCategory, newRolesString];
+            logToServer(`handleDetailFormSubmit: 追加モード - name=${newName}, category=${newCategory}, roles=${newRolesString}`);
         }
+        logToServer(`handleDetailFormSubmit: 呼び出すサーバー関数: ${serverFunction}`);
+        // --- ▲▲▲ ここまで ▲▲▲ ---
 
         google.script.run
             .withSuccessHandler(function(result) {
                 logToServer('handleDetailFormSubmit: SuccessHandler result: ' + JSON.stringify(result));
                 if (result.success) {
-                    showMessage(result.message || '詳細技術項目が追加されました。', 'success');
-                    document.getElementById('detail-form').reset(); // フォームリセット
-                     // チェックボックスのリセット
-                    document.querySelectorAll('#detail-roles-checkboxes input[type="checkbox"]').forEach(cb => cb.checked = false);
+                    showMessage(result.message || (isEditing ? '詳細技術項目情報が更新されました。' : '詳細技術項目が追加されました。'), 'success');
+                    resetDetailForm(); // フォームリセット
                     loadTechDetails(); // リスト再読み込み
                 } else {
-                    showMessage(result.message || '詳細技術項目の追加に失敗しました。', 'error');
+                    showMessage(result.message || (isEditing ? '詳細技術項目情報の更新に失敗しました。' : '詳細技術項目の追加に失敗しました。'), 'error');
                 }
-                submitBtn.disabled = false; submitBtn.textContent = '追加';
+                 // ボタンを元に戻す
+                 submitBtn.disabled = false;
+                 const buttonText = document.getElementById('detail-edit-original-name').value !== '' ? '更新' : '追加';
+                 submitBtn.textContent = buttonText;
             })
             .withFailureHandler(function(error) {
                 logToServer('handleDetailFormSubmit: FailureHandler error: ' + error.toString());
-                showMessage('詳細技術項目の追加中にエラーが発生しました: ' + error, 'error');
-                 submitBtn.disabled = false; submitBtn.textContent = '追加';
+                showMessage((isEditing ? '詳細技術項目情報の更新中にエラーが発生しました: ' : '詳細技術項目の追加中にエラーが発生しました: ') + error, 'error');
+                  // ボタンを元に戻す
+                  submitBtn.disabled = false;
+                  const buttonText = document.getElementById('detail-edit-original-name').value !== '' ? '更新' : '追加';
+                  submitBtn.textContent = buttonText;
             })
             [serverFunction].apply(null, args);
     }
