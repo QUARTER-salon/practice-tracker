@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="ja">
 <head>
@@ -39,17 +40,14 @@
         <h2>店舗管理</h2>
         <div class="admin-content">
           <div class="admin-form">
-            <!-- ★ 見出しを変更 ★ -->
             <h3 id="store-form-title">店舗追加</h3> 
             <form id="store-form">
               <div class="form-group">
                 <label for="store-name">店舗名</label>
                 <input type="text" id="store-name" name="storeName" required>
-                <!-- ★ 編集中の元の名前を保持する隠しフィールド ★ -->
                 <input type="hidden" id="store-edit-original-name"> 
               </div>
               <div class="form-actions">
-                <!-- ★ ボタンのIDと初期テキストを変更 ★ -->
                 <button type="submit" id="store-submit-btn" class="btn btn-primary">追加</button>
                 <button type="button" id="store-cancel-btn" class="btn hidden">キャンセル</button> 
               </div>
@@ -62,7 +60,6 @@
                 <thead>
                   <tr>
                     <th>店舗名</th>
-                    <!-- ★ 操作列の幅を少し広げる想定（任意） ★ -->
                     <th style="width: 120px;">操作</th> 
                   </tr>
                 </thead>
@@ -80,17 +77,14 @@
         <h2>役職管理</h2>
         <div class="admin-content">
           <div class="admin-form">
-            <!-- ★ 見出しID変更 ★ -->
             <h3 id="role-form-title">役職追加</h3>
             <form id="role-form">
               <div class="form-group">
                 <label for="role-name">役職名</label>
                 <input type="text" id="role-name" name="roleName" required>
-                <!-- ★ 編集中の元の名前を保持する隠しフィールド ★ -->
                 <input type="hidden" id="role-edit-original-name">
               </div>
               <div class="form-actions">
-                <!-- ★ ボタンIDと初期テキスト変更、キャンセルボタン追加 ★ -->
                 <button type="submit" id="role-submit-btn" class="btn btn-primary">追加</button>
                 <button type="button" id="role-cancel-btn" class="btn hidden">キャンセル</button>
               </div>
@@ -103,7 +97,6 @@
                 <thead>
                   <tr>
                     <th>役職名</th>
-                    <!-- ★ 操作列の幅指定 (店舗と合わせる) ★ -->
                     <th style="width: 120px;">操作</th>
                   </tr>
                 </thead>
@@ -122,9 +115,14 @@
         
         <div class="admin-content">
           <div class="admin-form">
-            <h3>トレーナー追加</h3>
+            <!-- ★ TODO: 編集機能実装時にID変更 -->
+            <!-- <h3 id="trainer-form-title">トレーナー追加</h3> -->
+             <h3>トレーナー追加</h3>
             <form id="trainer-form">
               <div class="form-group">
+                <!-- ★ TODO: 編集機能実装時に隠しフィールド追加 -->
+                <!-- <input type="hidden" id="trainer-edit-original-name"> -->
+                <!-- <input type="hidden" id="trainer-edit-original-store"> -->
                 <label for="trainer-name">トレーナー名</label>
                 <input type="text" id="trainer-name" name="trainerName" required>
               </div>
@@ -132,11 +130,13 @@
                 <label for="trainer-store">所属店舗</label>
                 <select id="trainer-store" name="trainerStore" required>
                   <option value="">選択してください</option>
-                  <!-- JSで動的に店舗リストを表示 -->
+                  <!-- JSで動的に店舗リストを表示 (updateStoreSelects) -->
                 </select>
               </div>
               <div class="form-actions">
-                <button type="submit" class="btn btn-primary">追加</button>
+                <!-- ★ TODO: 編集機能実装時にID変更＆キャンセルボタン追加 -->
+                <button type="submit" id="trainer-submit-btn" class="btn btn-primary">追加</button>
+                <!-- <button type="button" id="trainer-cancel-btn" class="btn hidden">キャンセル</button> -->
               </div>
             </form>
           </div>
@@ -149,7 +149,8 @@
                   <tr>
                     <th>トレーナー名</th>
                     <th>所属店舗</th>
-                    <th>操作</th>
+                    <!-- ★ 操作列の幅指定 (他と合わせる) ★ -->
+                    <th style="width: 120px;">操作</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -167,8 +168,12 @@
         
         <div class="admin-content">
           <div class="admin-form">
+            <!-- ★ TODO: 編集機能実装時にID変更 -->
+            <!-- <h3 id="category-form-title">カテゴリー追加</h3> -->
             <h3>カテゴリー追加</h3>
             <form id="category-form">
+               <!-- ★ TODO: 編集機能実装時に隠しフィールド追加 -->
+              <!-- <input type="hidden" id="category-edit-original-name"> -->
               <div class="form-group">
                 <label for="category-name">カテゴリー名</label>
                 <input type="text" id="category-name" name="categoryName" required>
@@ -176,7 +181,7 @@
               <div class="form-group">
                 <label for="category-roles">対象役職</label>
                 <div id="category-roles-checkboxes" class="checkbox-group">
-                  <!-- JSで動的に役職チェックボックスを表示 -->
+                  <!-- JSで動的に役職チェックボックスを表示 (updateRoleCheckboxes) -->
                 </div>
                 <div class="checkbox-item">
                   <input type="checkbox" id="category-all-roles" name="allRoles">
@@ -184,7 +189,9 @@
                 </div>
               </div>
               <div class="form-actions">
-                <button type="submit" class="btn btn-primary">追加</button>
+                 <!-- ★ TODO: 編集機能実装時にID変更＆キャンセルボタン追加 -->
+                <button type="submit" id="category-submit-btn" class="btn btn-primary">追加</button>
+                <!-- <button type="button" id="category-cancel-btn" class="btn hidden">キャンセル</button> -->
               </div>
             </form>
           </div>
@@ -197,7 +204,8 @@
                   <tr>
                     <th>カテゴリー名</th>
                     <th>対象役職</th>
-                    <th>操作</th>
+                    <!-- ★ 操作列の幅指定 (他と合わせる) ★ -->
+                    <th style="width: 120px;">操作</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -215,8 +223,13 @@
         
         <div class="admin-content">
           <div class="admin-form">
+             <!-- ★ TODO: 編集機能実装時にID変更 -->
+            <!-- <h3 id="detail-form-title">詳細項目追加</h3> -->
             <h3>詳細項目追加</h3>
             <form id="detail-form">
+              <!-- ★ TODO: 編集機能実装時に隠しフィールド追加 -->
+              <!-- <input type="hidden" id="detail-edit-original-name"> -->
+              <!-- <input type="hidden" id="detail-edit-original-category"> -->
               <div class="form-group">
                 <label for="detail-name">項目名</label>
                 <input type="text" id="detail-name" name="detailName" required>
@@ -225,13 +238,13 @@
                 <label for="detail-category">カテゴリー</label>
                 <select id="detail-category" name="detailCategory" required>
                   <option value="">選択してください</option>
-                  <!-- JSで動的にカテゴリーリストを表示 -->
+                  <!-- JSで動的にカテゴリーリストを表示 (updateCategorySelect) -->
                 </select>
               </div>
               <div class="form-group">
                 <label for="detail-roles">対象役職</label>
                 <div id="detail-roles-checkboxes" class="checkbox-group">
-                  <!-- JSで動的に役職チェックボックスを表示 -->
+                  <!-- JSで動的に役職チェックボックスを表示 (updateRoleCheckboxes) -->
                 </div>
                 <div class="checkbox-item">
                   <input type="checkbox" id="detail-all-roles" name="allRoles">
@@ -239,7 +252,9 @@
                 </div>
               </div>
               <div class="form-actions">
-                <button type="submit" class="btn btn-primary">追加</button>
+                <!-- ★ TODO: 編集機能実装時にID変更＆キャンセルボタン追加 -->
+                <button type="submit" id="detail-submit-btn" class="btn btn-primary">追加</button>
+                <!-- <button type="button" id="detail-cancel-btn" class="btn hidden">キャンセル</button> -->
               </div>
             </form>
           </div>
@@ -253,7 +268,8 @@
                     <th>項目名</th>
                     <th>カテゴリー</th>
                     <th>対象役職</th>
-                    <th>操作</th>
+                    <!-- ★ 操作列の幅指定 (他と合わせる) ★ -->
+                    <th style="width: 120px;">操作</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -277,7 +293,7 @@
                 <label for="inventory-store">店舗</label>
                 <select id="inventory-store" name="inventoryStore" required>
                   <option value="">選択してください</option>
-                  <!-- JSで動的に店舗リストを表示 -->
+                  <!-- JSで動的に店舗リストを表示 (updateStoreSelects) -->
                 </select>
               </div>
               <div class="form-group">
@@ -311,12 +327,12 @@
     </main>
     
     <footer>
-      <p>&copy; 2025 美容師練習管理アプリ</p>
+      <p>© 2025 美容師練習管理アプリ</p>
     </footer>
   </div>
   
   <?!= include('styles'); ?>
-  <?!= include('script'); ?>
-  <?!= include('admin_script'); ?>
+  <?!= include('script'); ?> <!-- 共通JS -->
+  <?!= include('admin_script'); ?> <!-- 管理者画面専用JS -->
 </body>
 </html>

@@ -1,35 +1,70 @@
+
 <script>
   /**
    * 美容師練習管理アプリ - 管理者画面のJavaScript
    */
   document.addEventListener('DOMContentLoaded', function() {
-    logToServer('admin_script.html: DOMContentLoaded 開始'); 
-  
+    logToServer('admin_script.html: DOMContentLoaded 開始');
+
     // --- 初期化処理 ---
     try {
         setupTabs();
         loadAllData(); // ★★★ この中で各load関数が呼ばれる
         setupFormListeners();
         setupNavButtons();
-        setupStoreCancelButton(); 
-        setupRoleCancelButton(); 
-        // TODO: 他の管理項目のキャンセルボタンリスナーもここに追加
+        setupStoreCancelButton();
+        setupRoleCancelButton();
+        // ★ TODO: トレーナー、カテゴリー、詳細のキャンセルボタンリスナーを追加
+        // setupTrainerCancelButton();
+        // setupCategoryCancelButton();
+        // setupDetailCancelButton();
         logToServer('admin_script.html: 初期化完了');
     } catch(initError) {
         console.error("初期化エラー:", initError);
         logToServer('admin_script.html: ★★★ 初期化エラー ★★★ - ' + initError.toString());
         showMessage('管理画面の初期化に失敗しました。', 'error');
     }
-  
+
     // --- タブ切り替え処理 ---
     function setupTabs() {
       const tabButtons = document.querySelectorAll('.tab-btn');
-      const tabPanels = document.querySelectorAll('.tab-panel');
-      if (tabButtons.length === 0 || tabPanels.length === 0) { /* ... */ }
-      tabButtons.forEach(function(button) { /* ... */ });
+      const tabPanels = document.querySelectorAll('.tab-panel'); // ★ typo修正 panel-tab -> tab-panel
+      if (tabButtons.length === 0 || tabPanels.length === 0) {
+          logToServer('setupTabs: ★★★ エラー: タブボタンまたはパネルが見つかりません ★★★');
+          console.error("Tab buttons or panels not found!");
+          showMessage('画面のタブ切り替え機能の初期化に失敗しました。', 'error');
+          return;
+      }
+      // 初期表示タブの設定 (例: 最初のタブをアクティブにする)
+      if (tabButtons.length > 0 && tabPanels.length > 0) {
+          tabButtons[0].classList.add('active');
+          tabPanels[0].classList.add('active');
+      }
+
+      tabButtons.forEach(function(button) {
+        button.addEventListener('click', function() {
+          // すべてのボタンとパネルから 'active' クラスを削除
+          tabButtons.forEach(btn => btn.classList.remove('active'));
+          tabPanels.forEach(panel => panel.classList.remove('active'));
+
+          // クリックされたボタンに 'active' クラスを追加
+          this.classList.add('active');
+
+          // 対応するパネルを表示
+          const targetPanelId = 'panel-' + this.id.substring(4); // 'tab-store' -> 'panel-store'
+          const targetPanel = document.getElementById(targetPanelId);
+          if (targetPanel) {
+            targetPanel.classList.add('active');
+            logToServer('setupTabs: タブ切り替え -> ' + targetPanelId);
+          } else {
+            logToServer('setupTabs: ★★★ エラー: 対応するパネルが見つかりません - ' + targetPanelId + ' ★★★');
+            console.error('Target panel not found:', targetPanelId);
+          }
+        });
+      });
       logToServer('setupTabs: 設定完了');
     }
-    
+
     // --- 全データ読み込み ---
     function loadAllData() {
        logToServer('loadAllData: 開始');
@@ -53,16 +88,112 @@
            showMessage('データの初期読み込み中にエラーが発生しました。', 'error');
        }
     }
-    
+
     // --- フォームリスナー設定 ---
-    function setupFormListeners() { /* ... (変更なし、ログは既に追加済み) ... */ }
-    function setupStoreCancelButton() { /* ... (変更なし) ... */ }
-    function setupRoleCancelButton() { /* ... (変更なし) ... */ }
-    // TODO: 他のキャンセルボタン設定
-  
+    function setupFormListeners() {
+        logToServer('setupFormListeners: 開始');
+        // 各管理項目のフォーム送信イベントリスナーを設定
+        const forms = [
+            { id: 'store-form', handler: handleStoreFormSubmit },
+            { id: 'role-form', handler: handleRoleFormSubmit },
+            { id: 'trainer-form', handler: handleTrainerFormSubmit },
+            { id: 'category-form', handler: handleCategoryFormSubmit },
+            { id: 'detail-form', handler: handleDetailFormSubmit },
+            { id: 'inventory-form', handler: handleInventoryFormSubmit },
+        ];
+
+        forms.forEach(formInfo => {
+            const formElement = document.getElementById(formInfo.id);
+            if (formElement) {
+                formElement.addEventListener('submit', formInfo.handler);
+                logToServer('setupFormListeners: ' + formInfo.id + ' のリスナー設定完了');
+            } else {
+                logToServer('setupFormListeners: ★★★ エラー: フォームが見つかりません - ' + formInfo.id + ' ★★★');
+                console.error('Form not found:', formInfo.id);
+            }
+        });
+        logToServer('setupFormListeners: 完了');
+    }
+    function setupStoreCancelButton() {
+        const cancelButton = document.getElementById('store-cancel-btn');
+        if (cancelButton) {
+            cancelButton.addEventListener('click', resetStoreForm);
+            logToServer('setupStoreCancelButton: リスナー設定完了');
+        } else {
+            logToServer('setupStoreCancelButton: ★★★ エラー: キャンセルボタンが見つかりません ★★★');
+        }
+    }
+    function setupRoleCancelButton() {
+         const cancelButton = document.getElementById('role-cancel-btn');
+         if (cancelButton) {
+             cancelButton.addEventListener('click', resetRoleForm);
+             logToServer('setupRoleCancelButton: リスナー設定完了');
+         } else {
+             logToServer('setupRoleCancelButton: ★★★ エラー: キャンセルボタンが見つかりません ★★★');
+         }
+     }
+    // ★ TODO: トレーナー、カテゴリー、詳細のキャンセルボタン設定関数を追加
+    /*
+    function setupTrainerCancelButton() {
+         const cancelButton = document.getElementById('trainer-cancel-btn');
+         if (cancelButton) {
+             cancelButton.addEventListener('click', resetTrainerForm);
+             logToServer('setupTrainerCancelButton: リスナー設定完了');
+         } else { logToServer('...'); }
+     }
+    function setupCategoryCancelButton() {
+         const cancelButton = document.getElementById('category-cancel-btn');
+         if (cancelButton) {
+             cancelButton.addEventListener('click', resetCategoryForm);
+             logToServer('setupCategoryCancelButton: リスナー設定完了');
+         } else { logToServer('...'); }
+    }
+    function setupDetailCancelButton() {
+         const cancelButton = document.getElementById('detail-cancel-btn');
+         if (cancelButton) {
+             cancelButton.addEventListener('click', resetDetailForm);
+             logToServer('setupDetailCancelButton: リスナー設定完了');
+         } else { logToServer('...'); }
+    }
+    */
+
     // --- ナビゲーションボタン設定 ---
-    function setupNavButtons() { /* ... (変更なし、ログは既に追加済み) ... */ }
-    
+    function setupNavButtons() {
+        logToServer('setupNavButtons: 開始');
+        const appBtn = document.getElementById('app-btn');
+        const logoutBtn = document.getElementById('logout-btn');
+
+        if (appBtn) {
+            appBtn.addEventListener('click', () => {
+                logToServer('setupNavButtons: アプリボタンクリック');
+                window.location.href = '<?= ScriptApp.getService().getUrl() ?>'; // ベースURLへ
+            });
+            logToServer('setupNavButtons: アプリボタンリスナー設定完了');
+        } else { logToServer('setupNavButtons: ★★★ エラー: アプリボタンが見つかりません ★★★'); }
+
+        if (logoutBtn) {
+            logoutBtn.addEventListener('click', () => {
+                logToServer('setupNavButtons: ログアウトボタンクリック');
+                if (confirm('ログアウトしてもよろしいですか？')) {
+                    google.script.run
+                        .withSuccessHandler(() => {
+                            logToServer('setupNavButtons: ログアウト成功、ログイン画面へ遷移');
+                            window.location.href = '<?= ScriptApp.getService().getUrl() ?>?page=index'; // ログインページへ
+                        })
+                        .withFailureHandler(error => {
+                            logToServer('setupNavButtons: ログアウト失敗 - ' + error.toString());
+                            showMessage('ログアウト処理中にエラーが発生しました: ' + error, 'error');
+                        })
+                        .logout(); // Auth.js
+                } else {
+                    logToServer('setupNavButtons: ログアウトキャンセル');
+                }
+            });
+            logToServer('setupNavButtons: ログアウトボタンリスナー設定完了');
+        } else { logToServer('setupNavButtons: ★★★ エラー: ログアウトボタンが見つかりません ★★★'); }
+        logToServer('setupNavButtons: 完了');
+    }
+
     // ==================================
     // --- 店舗管理関数 ---
     // ==================================
@@ -70,13 +201,15 @@
        logToServer('loadStores: 関数開始'); // ★ログ追加
       google.script.run
         .withSuccessHandler(function(result) {
+           // ★ 詳細なログを追加
+           logToServer('loadStores: SuccessHandler result: ' + JSON.stringify(result));
            logToServer('loadStores: SuccessHandler 開始, success=' + result?.success); // ★ログ追加
            try { // ★ try-catch追加
                if (result.success) {
                  logToServer('loadStores: displayStoreList 呼び出し前'); // ★ログ追加
                  displayStoreList(result.data);
                  logToServer('loadStores: updateStoreSelects 呼び出し前'); // ★ログ追加
-                 updateStoreSelects(result.data); 
+                 updateStoreSelects(result.data);
                  logToServer('loadStores: SuccessHandler 完了'); // ★ログ追加
                } else {
                  logToServer('loadStores: SuccessHandler 失敗 - ' + result.message); // ★ログ追加
@@ -89,22 +222,56 @@
            }
         })
         .withFailureHandler(function(error) {
+           // ★ 詳細なログを追加
+           logToServer('loadStores: FailureHandler error: ' + error.toString() + ' | ' + JSON.stringify(error));
            logToServer('loadStores: FailureHandler 発生 - ' + error.toString()); // ★ログ追加
            showMessage('店舗情報の取得中にエラーが発生しました: ' + error, 'error');
         })
         .getStores(); // AdminHandler.js
        logToServer('loadStores: google.script.run 呼び出し完了'); // ★ログ追加
     }
-    
+
     function displayStoreList(stores) {
+      // ★ 詳細なログを追加
+      logToServer('displayStoreList: 開始, targetElement=' + (document.getElementById('store-list')?.querySelector('tbody') ? '取得成功' : '取得失敗') + ', data=' + JSON.stringify(stores));
       logToServer('displayStoreList: 開始, 店舗数=' + (stores ? stores.length : 0)); // ★ログ追加
       try { // ★ try-catch追加
           const storeList = document.getElementById('store-list')?.querySelector('tbody');
-          if (!storeList) { /* ... エラーログ ... */ return; }
-          storeList.innerHTML = ''; 
+          if (!storeList) {
+              logToServer('displayStoreList: ★★★ エラー: store-list tbody が見つかりません ★★★');
+              console.error("Element '#store-list tbody' not found!");
+              showMessage('店舗リストの表示エリアが見つかりません。', 'error');
+              return;
+          }
+          storeList.innerHTML = '';
           if (stores && stores.length > 0) {
-              stores.forEach(function(store) { /* ... 行作成と追加 (編集ボタン含む)... */ });
-          } else { /* ... データなし表示 ... */ }
+              stores.forEach(function(storeName) { // ★ データ形式に合わせて変更 (getStoresは文字列配列を返す)
+                const row = storeList.insertRow();
+                row.insertCell().textContent = storeName;
+
+                const actionsCell = row.insertCell();
+                const editButton = document.createElement('button');
+                editButton.textContent = '編集';
+                editButton.classList.add('btn', 'btn-small');
+                editButton.onclick = function() { editStore(storeName); }; // editStore 関数を呼び出す
+                actionsCell.appendChild(editButton);
+
+                // ★ 削除ボタンも追加
+                const deleteButton = document.createElement('button');
+                deleteButton.textContent = '削除';
+                deleteButton.classList.add('btn', 'btn-small', 'btn-danger');
+                deleteButton.style.marginLeft = '5px';
+                deleteButton.onclick = function() { deleteStore(storeName); };
+                actionsCell.appendChild(deleteButton);
+              });
+          } else {
+              const row = storeList.insertRow();
+              const cell = row.insertCell();
+              cell.textContent = '登録されている店舗はありません。';
+              cell.colSpan = 2; // 列数に合わせて調整
+              cell.style.textAlign = 'center';
+              cell.style.fontStyle = 'italic';
+          }
            logToServer('displayStoreList: 完了'); // ★ログ追加
        } catch(e) { // ★ エラーキャッチ
            logToServer('displayStoreList: ★★★ エラー発生 ★★★ - ' + e.toString());
@@ -112,13 +279,34 @@
            showMessage('店舗リストの表示中にエラーが発生しました。', 'error');
        }
     }
-  
+
     function updateStoreSelects(stores) {
+        // ★ 詳細なログを追加
+        logToServer('updateStoreSelects: 開始, targetElements=' +
+            (document.getElementById('trainer-store') ? 'trainer-store OK, ' : 'trainer-store NG, ') +
+            (document.getElementById('inventory-store') ? 'inventory-store OK' : 'inventory-store NG') +
+            ', data=' + JSON.stringify(stores));
         logToServer('updateStoreSelects: 開始'); // ★ログ追加
         try { // ★ try-catch追加
           const selects = [ document.getElementById('trainer-store'), document.getElementById('inventory-store') ];
-          selects.forEach(selectElement => { 
-              if (selectElement) { /* ... オプション更新処理 ... */ }
+          selects.forEach(selectElement => {
+              if (selectElement) {
+                  // 既存のオプションをクリア (最初の「選択してください」を除く)
+                  while (selectElement.options.length > 1) {
+                      selectElement.remove(1);
+                  }
+                  // 新しいオプションを追加
+                  if (stores && stores.length > 0) {
+                      stores.forEach(storeName => {
+                          const option = document.createElement('option');
+                          option.value = storeName;
+                          option.textContent = storeName;
+                          selectElement.appendChild(option);
+                      });
+                  }
+              } else {
+                  logToServer('updateStoreSelects: ★★★ エラー: Select要素が見つかりません ★★★');
+              }
           });
           logToServer('updateStoreSelects: 完了'); // ★ログ追加
         } catch(e) { // ★ エラーキャッチ
@@ -127,17 +315,116 @@
             showMessage('店舗選択肢の更新中にエラーが発生しました。', 'error');
         }
     }
-    function deleteStore(storeName) { /* ... (変更なし、ログは既に追加済み) ... */ }
-    function editStore(storeName) { /* ... (変更なし、ログは既に追加済み) ... */ }
-    function resetStoreForm() { /* ... (変更なし、ログは既に追加済み) ... */ }
-    function handleStoreFormSubmit(event) { /* ... (変更なし、ログは既に追加済み) ... */ }
-    
+
+    function deleteStore(storeName) {
+        logToServer('deleteStore: 開始 - storeName=' + storeName);
+        if (!storeName) {
+            showMessage('削除する店舗が指定されていません。', 'error');
+            return;
+        }
+        if (confirm('店舗「' + storeName + '」を削除してもよろしいですか？\n関連する情報（トレーナー、在庫など）も影響を受ける可能性があります。')) {
+            google.script.run
+                .withSuccessHandler(function(result) {
+                    logToServer('deleteStore: SuccessHandler result: ' + JSON.stringify(result));
+                    if (result.success) {
+                        showMessage(result.message || '店舗が削除されました。', 'success');
+                        loadStores(); // リストを再読み込み
+                    } else {
+                        showMessage(result.message || '店舗の削除に失敗しました。', 'error');
+                    }
+                })
+                .withFailureHandler(function(error) {
+                    logToServer('deleteStore: FailureHandler error: ' + error.toString());
+                    showMessage('店舗の削除中にエラーが発生しました: ' + error, 'error');
+                })
+                .deleteStore(storeName); // AdminHandler.js
+        } else {
+            logToServer('deleteStore: 削除キャンセル');
+        }
+    }
+
+    function editStore(storeName) {
+        logToServer('editStore: 開始 - storeName=' + storeName);
+        document.getElementById('store-form-title').textContent = '店舗編集';
+        document.getElementById('store-name').value = storeName;
+        document.getElementById('store-edit-original-name').value = storeName; // 元の名前を保持
+        document.getElementById('store-submit-btn').textContent = '更新';
+        document.getElementById('store-cancel-btn').classList.remove('hidden');
+        document.getElementById('store-name').focus(); // 入力フィールドにフォーカス
+    }
+
+    function resetStoreForm() {
+        logToServer('resetStoreForm: 開始');
+        document.getElementById('store-form').reset(); // フォームの内容をクリア
+        document.getElementById('store-form-title').textContent = '店舗追加';
+        document.getElementById('store-edit-original-name').value = ''; // 元の名前をクリア
+        document.getElementById('store-submit-btn').textContent = '追加';
+        document.getElementById('store-cancel-btn').classList.add('hidden');
+        logToServer('resetStoreForm: 完了');
+        // 必要であればリストを再読み込み loadStores();
+    }
+
+    function handleStoreFormSubmit(event) {
+        event.preventDefault(); // デフォルトの送信をキャンセル
+        logToServer('handleStoreFormSubmit: 開始');
+        const storeNameInput = document.getElementById('store-name');
+        const originalNameInput = document.getElementById('store-edit-original-name');
+        const storeName = storeNameInput.value.trim();
+        const originalName = originalNameInput.value.trim();
+
+        if (!storeName) {
+            showMessage('店舗名を入力してください。', 'error');
+            return;
+        }
+
+        const submitBtn = document.getElementById('store-submit-btn');
+        submitBtn.disabled = true;
+        submitBtn.textContent = '処理中...';
+
+        const isEditing = originalName !== ''; // 編集モードかどうかの判定
+
+        let serverFunction;
+        let args;
+        if (isEditing) {
+            serverFunction = 'updateStore'; // AdminHandler.js
+            args = [originalName, storeName];
+            logToServer('handleStoreFormSubmit: 編集モード - original=' + originalName + ', new=' + storeName);
+        } else {
+            serverFunction = 'addStore'; // AdminHandler.js
+            args = [storeName];
+            logToServer('handleStoreFormSubmit: 追加モード - name=' + storeName);
+        }
+
+        google.script.run
+            .withSuccessHandler(function(result) {
+                logToServer('handleStoreFormSubmit: SuccessHandler result: ' + JSON.stringify(result));
+                if (result.success) {
+                    showMessage(result.message || (isEditing ? '店舗情報が更新されました。' : '店舗が追加されました。'), 'success');
+                    resetStoreForm(); // フォームをリセット
+                    loadStores(); // リストを再読み込み
+                } else {
+                    showMessage(result.message || (isEditing ? '店舗情報の更新に失敗しました。' : '店舗の追加に失敗しました。'), 'error');
+                }
+                submitBtn.disabled = false;
+                submitBtn.textContent = isEditing ? '更新' : '追加'; // ボタンテキストを元に戻す
+            })
+            .withFailureHandler(function(error) {
+                logToServer('handleStoreFormSubmit: FailureHandler error: ' + error.toString());
+                showMessage((isEditing ? '店舗情報の更新中にエラーが発生しました: ' : '店舗の追加中にエラーが発生しました: ') + error, 'error');
+                submitBtn.disabled = false;
+                submitBtn.textContent = isEditing ? '更新' : '追加'; // ボタンテキストを元に戻す
+            })
+            [serverFunction].apply(null, args); // 関数名と引数で呼び出し
+    }
+
     // ==================================
     // --- 役職管理関数 ---
     // ==================================
     function loadRoles() {
       logToServer('loadRoles: 関数開始'); // ★ログ追加
       google.script.run.withSuccessHandler(function(result){
+        // ★ 詳細なログを追加
+        logToServer('loadRoles: SuccessHandler result: ' + JSON.stringify(result));
         logToServer('loadRoles: SuccessHandler 開始, success=' + result?.success); // ★ログ追加
         try { // ★ try-catch追加
           if(result.success){
@@ -146,9 +433,9 @@
             logToServer('loadRoles: updateRoleCheckboxes 呼び出し前'); // ★ログ追加
             updateRoleCheckboxes(result.data);
             logToServer('loadRoles: SuccessHandler 完了'); // ★ログ追加
-          } else { 
+          } else {
               logToServer('loadRoles: SuccessHandler 失敗 - ' + result.message); // ★ログ追加
-              showMessage(result.message || '役職情報の取得に失敗しました。', 'error'); 
+              showMessage(result.message || '役職情報の取得に失敗しました。', 'error');
           }
         } catch(e){ // ★ エラーキャッチ
              logToServer('loadRoles: ★★★ SuccessHandler内でエラー ★★★ - ' + e.toString());
@@ -156,20 +443,55 @@
              showMessage('役職情報の表示処理中にエラーが発生しました。', 'error');
         }
       }).withFailureHandler(function(error){
+          // ★ 詳細なログを追加
+          logToServer('loadRoles: FailureHandler error: ' + error.toString() + ' | ' + JSON.stringify(error));
           logToServer('loadRoles: FailureHandler 発生 - ' + error.toString()); // ★ログ追加
           showMessage('役職情報の取得中にエラーが発生しました: ' + error, 'error');
-      }).getRoles();
+      }).getRoles(); // AdminHandler.js
       logToServer('loadRoles: google.script.run 呼び出し完了'); // ★ログ追加
     }
+
     function displayRoleList(roles) {
       logToServer('displayRoleList: 開始, 役職数=' + (roles ? roles.length : 0)); // ★ログ追加
+      // ★ 詳細なログを追加
+      logToServer('displayRoleList: 開始, targetElement=' + (document.getElementById('role-list')?.querySelector('tbody') ? '取得成功' : '取得失敗') + ', data=' + JSON.stringify(roles));
       try{ // ★ try-catch追加
           const roleList = document.getElementById('role-list')?.querySelector('tbody');
-          if (!roleList) { /* ... エラーログ ... */ return; }
-          roleList.innerHTML = ''; 
+          if (!roleList) {
+              logToServer('displayRoleList: ★★★ エラー: role-list tbody が見つかりません ★★★');
+              console.error("Element '#role-list tbody' not found!");
+              showMessage('役職リストの表示エリアが見つかりません。', 'error');
+              return;
+          }
+          roleList.innerHTML = '';
           if (roles && roles.length > 0) {
-               roles.forEach(function(role) { /* ... 行作成と追加 (編集ボタン含む)... */ });
-          } else { /* ... データなし表示 ... */ }
+               roles.forEach(function(roleName) { // ★ データ形式に合わせて変更 (getRolesは文字列配列を返す)
+                  const row = roleList.insertRow();
+                  row.insertCell().textContent = roleName;
+
+                  const actionsCell = row.insertCell();
+                  const editButton = document.createElement('button');
+                  editButton.textContent = '編集';
+                  editButton.classList.add('btn', 'btn-small');
+                  editButton.onclick = function() { editRole(roleName); }; // editRole 関数を呼び出す
+                  actionsCell.appendChild(editButton);
+
+                  // ★ 削除ボタンも追加
+                  const deleteButton = document.createElement('button');
+                  deleteButton.textContent = '削除';
+                  deleteButton.classList.add('btn', 'btn-small', 'btn-danger');
+                  deleteButton.style.marginLeft = '5px';
+                  deleteButton.onclick = function() { deleteRole(roleName); };
+                  actionsCell.appendChild(deleteButton);
+               });
+          } else {
+              const row = roleList.insertRow();
+              const cell = row.insertCell();
+              cell.textContent = '登録されている役職はありません。';
+              cell.colSpan = 2; // 列数に合わせて調整
+              cell.style.textAlign = 'center';
+              cell.style.fontStyle = 'italic';
+          }
            logToServer('displayRoleList: 完了'); // ★ログ追加
        } catch(e){ // ★ エラーキャッチ
           logToServer('displayRoleList: ★★★ エラー発生 ★★★ - ' + e.toString());
@@ -177,13 +499,51 @@
           showMessage('役職リストの表示中にエラーが発生しました。', 'error');
       }
     }
+
     function updateRoleCheckboxes(roles) {
         logToServer('updateRoleCheckboxes: 開始'); // ★ログ追加
+        // ★ 詳細なログを追加
+        logToServer('updateRoleCheckboxes: 開始, targetElements=' +
+            (document.getElementById('category-roles-checkboxes') ? 'category OK, ' : 'category NG, ') +
+            (document.getElementById('detail-roles-checkboxes') ? 'detail OK' : 'detail NG') +
+            ', data=' + JSON.stringify(roles));
         try{ // ★ try-catch追加
             const categoryRolesContainer = document.getElementById('category-roles-checkboxes');
             const detailRolesContainer = document.getElementById('detail-roles-checkboxes');
-            if (!categoryRolesContainer || !detailRolesContainer) { /* ... エラーログ ... */ return; }
-            // ... チェックボックス更新処理 ... 
+            if (!categoryRolesContainer || !detailRolesContainer) {
+                logToServer('updateRoleCheckboxes: ★★★ エラー: チェックボックスコンテナが見つかりません ★★★');
+                console.error("Role checkbox containers not found!");
+                return;
+             }
+            // ★ チェックボックス更新処理
+            categoryRolesContainer.innerHTML = ''; // コンテナをクリア
+            detailRolesContainer.innerHTML = '';   // コンテナをクリア
+            if (roles && roles.length > 0) {
+                roles.forEach((roleName, index) => {
+                    // カテゴリー用チェックボックス
+                    const categoryCheckboxId = 'cat-role-' + index;
+                    const categoryItem = document.createElement('div');
+                    categoryItem.classList.add('checkbox-item');
+                    categoryItem.innerHTML = `
+                        <input type="checkbox" id="${categoryCheckboxId}" name="categoryRoles" value="${roleName}">
+                        <label for="${categoryCheckboxId}">${roleName}</label>
+                    `;
+                    categoryRolesContainer.appendChild(categoryItem);
+
+                    // 詳細用チェックボックス
+                    const detailCheckboxId = 'det-role-' + index;
+                    const detailItem = document.createElement('div');
+                    detailItem.classList.add('checkbox-item');
+                    detailItem.innerHTML = `
+                        <input type="checkbox" id="${detailCheckboxId}" name="detailRoles" value="${roleName}">
+                        <label for="${detailCheckboxId}">${roleName}</label>
+                    `;
+                    detailRolesContainer.appendChild(detailItem);
+                });
+            } else {
+                categoryRolesContainer.textContent = '登録されている役職がありません。';
+                detailRolesContainer.textContent = '登録されている役職がありません。';
+            }
         } catch(e){ // ★ エラーキャッチ
             logToServer('updateRoleCheckboxes: ★★★ エラー発生 ★★★ - ' + e.toString());
             console.error("updateRoleCheckboxes error:", e);
@@ -191,53 +551,286 @@
         }
         logToServer('updateRoleCheckboxes: 完了'); // ★ログ追加
     }
-    function deleteRole(roleName) { /* ... (変更なし、ログは既に追加済み) ... */ }
-    function editRole(roleName) { /* ... (変更なし、ログは既に追加済み) ... */ }
-    function resetRoleForm() { /* ... (変更なし、ログは既に追加済み) ... */ }
-    function handleRoleFormSubmit(event) { /* ... (変更なし、ログは既に追加済み) ... */ }
-  
+
+    function deleteRole(roleName) {
+        logToServer('deleteRole: 開始 - roleName=' + roleName);
+        if (!roleName) {
+            showMessage('削除する役職が指定されていません。', 'error');
+            return;
+        }
+        if (confirm('役職「' + roleName + '」を削除してもよろしいですか？\n関連する情報（スタッフ、カテゴリー、詳細項目など）も影響を受ける可能性があります。')) {
+            google.script.run
+                .withSuccessHandler(function(result) {
+                    logToServer('deleteRole: SuccessHandler result: ' + JSON.stringify(result));
+                    if (result.success) {
+                        showMessage(result.message || '役職が削除されました。', 'success');
+                        loadRoles(); // リストとチェックボックスを再読み込み
+                    } else {
+                        showMessage(result.message || '役職の削除に失敗しました。', 'error');
+                    }
+                })
+                .withFailureHandler(function(error) {
+                    logToServer('deleteRole: FailureHandler error: ' + error.toString());
+                    showMessage('役職の削除中にエラーが発生しました: ' + error, 'error');
+                })
+                .deleteRole(roleName); // AdminHandler.js
+        } else {
+            logToServer('deleteRole: 削除キャンセル');
+        }
+    }
+
+    function editRole(roleName) {
+        logToServer('editRole: 開始 - roleName=' + roleName);
+        document.getElementById('role-form-title').textContent = '役職編集';
+        document.getElementById('role-name').value = roleName;
+        document.getElementById('role-edit-original-name').value = roleName; // 元の名前を保持
+        document.getElementById('role-submit-btn').textContent = '更新';
+        document.getElementById('role-cancel-btn').classList.remove('hidden');
+        document.getElementById('role-name').focus(); // 入力フィールドにフォーカス
+    }
+
+    function resetRoleForm() {
+        logToServer('resetRoleForm: 開始');
+        document.getElementById('role-form').reset(); // フォームの内容をクリア
+        document.getElementById('role-form-title').textContent = '役職追加';
+        document.getElementById('role-edit-original-name').value = ''; // 元の名前をクリア
+        document.getElementById('role-submit-btn').textContent = '追加';
+        document.getElementById('role-cancel-btn').classList.add('hidden');
+        logToServer('resetRoleForm: 完了');
+        // 必要であればリストを再読み込み loadRoles();
+    }
+
+    function handleRoleFormSubmit(event) {
+        event.preventDefault(); // デフォルトの送信をキャンセル
+        logToServer('handleRoleFormSubmit: 開始');
+        const roleNameInput = document.getElementById('role-name');
+        const originalNameInput = document.getElementById('role-edit-original-name');
+        const roleName = roleNameInput.value.trim();
+        const originalName = originalNameInput.value.trim();
+
+        if (!roleName) {
+            showMessage('役職名を入力してください。', 'error');
+            return;
+        }
+
+        const submitBtn = document.getElementById('role-submit-btn');
+        submitBtn.disabled = true;
+        submitBtn.textContent = '処理中...';
+
+        const isEditing = originalName !== ''; // 編集モードかどうかの判定
+
+        let serverFunction;
+        let args;
+        if (isEditing) {
+            serverFunction = 'updateRole'; // AdminHandler.js
+            args = [originalName, roleName];
+            logToServer('handleRoleFormSubmit: 編集モード - original=' + originalName + ', new=' + roleName);
+        } else {
+            serverFunction = 'addRole'; // AdminHandler.js
+            args = [roleName];
+            logToServer('handleRoleFormSubmit: 追加モード - name=' + roleName);
+        }
+
+        google.script.run
+            .withSuccessHandler(function(result) {
+                logToServer('handleRoleFormSubmit: SuccessHandler result: ' + JSON.stringify(result));
+                if (result.success) {
+                    showMessage(result.message || (isEditing ? '役職情報が更新されました。' : '役職が追加されました。'), 'success');
+                    resetRoleForm(); // フォームをリセット
+                    loadRoles(); // リストとチェックボックスを再読み込み
+                } else {
+                    showMessage(result.message || (isEditing ? '役職情報の更新に失敗しました。' : '役職の追加に失敗しました。'), 'error');
+                }
+                submitBtn.disabled = false;
+                submitBtn.textContent = isEditing ? '更新' : '追加'; // ボタンテキストを元に戻す
+            })
+            .withFailureHandler(function(error) {
+                logToServer('handleRoleFormSubmit: FailureHandler error: ' + error.toString());
+                showMessage((isEditing ? '役職情報の更新中にエラーが発生しました: ' : '役職の追加中にエラーが発生しました: ') + error, 'error');
+                submitBtn.disabled = false;
+                submitBtn.textContent = isEditing ? '更新' : '追加'; // ボタンテキストを元に戻す
+            })
+            [serverFunction].apply(null, args); // 関数名と引数で呼び出し
+    }
+
     // ==================================
     // --- トレーナー管理関数 ---
     // ==================================
-    // ★★★ loadTrainers, displayTrainerList にも同様のログと try-catch を追加 ★★★
     function loadTrainers() {
        logToServer('loadTrainers: 関数開始');
        google.script.run.withSuccessHandler(function(result){
+           // ★ 詳細なログを追加
+           logToServer('loadTrainers: SuccessHandler result: ' + JSON.stringify(result));
            logToServer('loadTrainers: SuccessHandler 開始, success=' + result?.success);
            try {
                if(result.success){
                    logToServer('loadTrainers: displayTrainerList 呼び出し前');
                    displayTrainerList(result.data);
                    logToServer('loadTrainers: SuccessHandler 完了');
-               } else { /*...*/ }
-           } catch(e) { /*...*/ }
-       }).withFailureHandler(function(error){/*...*/}).getAllTrainers();
+               } else {
+                   logToServer('loadTrainers: SuccessHandler 失敗 - ' + result.message);
+                   showMessage(result.message || 'トレーナー情報の取得に失敗しました。', 'error');
+               }
+           } catch(e) {
+               logToServer('loadTrainers: ★★★ SuccessHandler内でエラー ★★★ - ' + e.toString());
+               console.error("loadTrainers SuccessHandler error:", e);
+               showMessage('トレーナー情報の表示処理中にエラーが発生しました。', 'error');
+           }
+       }).withFailureHandler(function(error){
+            // ★ 詳細なログを追加
+            logToServer('loadTrainers: FailureHandler error: ' + error.toString() + ' | ' + JSON.stringify(error));
+            logToServer('loadTrainers: FailureHandler 発生 - ' + error.toString());
+            showMessage('トレーナー情報の取得中にエラーが発生しました: ' + error, 'error');
+       }).getAllTrainers(); // AdminHandler.js
        logToServer('loadTrainers: google.script.run 呼び出し完了');
     }
+
     function displayTrainerList(trainers) {
+        // ★ 詳細なログを追加
+        logToServer('displayTrainerList: 開始, targetElement=' + (document.getElementById('trainer-list')?.querySelector('tbody') ? '取得成功' : '取得失敗') + ', data=' + JSON.stringify(trainers));
         logToServer('displayTrainerList: 開始, 件数=' + (trainers ? trainers.length : 0));
         try {
             const trainerList = document.getElementById('trainer-list')?.querySelector('tbody');
-            if (!trainerList) { /*...*/ return; }
+            if (!trainerList) {
+                logToServer('displayTrainerList: ★★★ エラー: trainer-list tbody が見つかりません ★★★');
+                console.error("Element '#trainer-list tbody' not found!");
+                showMessage('トレーナーリストの表示エリアが見つかりません。', 'error');
+                return;
+            }
             trainerList.innerHTML = '';
             if (trainers && trainers.length > 0) {
-                 trainers.forEach(function(trainer) { /* ... 行作成 (編集ボタンTODO) ... */ });
-            } else { /* ... データなし表示 ... */ }
-        } catch(e) { /*...*/ }
+                 trainers.forEach(function(trainer) { // ★ getAllTrainers が返すデータ構造に合わせる (想定: {name: string, store: string}[])
+                    const row = trainerList.insertRow();
+                    row.insertCell().textContent = trainer.name;
+                    row.insertCell().textContent = trainer.store;
+
+                    const actionsCell = row.insertCell();
+                    // ★ TODO: 編集ボタンを追加
+                    const editButton = document.createElement('button');
+                    editButton.textContent = '編集';
+                    editButton.classList.add('btn', 'btn-small', 'hidden'); // ★ 現状は非表示
+                    // editButton.onclick = function() { editTrainer(trainer.name, trainer.store); };
+                    actionsCell.appendChild(editButton);
+
+                    // ★ 削除ボタンも追加
+                    const deleteButton = document.createElement('button');
+                    deleteButton.textContent = '削除';
+                    deleteButton.classList.add('btn', 'btn-small', 'btn-danger');
+                    deleteButton.style.marginLeft = '5px';
+                    deleteButton.onclick = function() { deleteTrainer(trainer.name, trainer.store); };
+                    actionsCell.appendChild(deleteButton);
+                 });
+            } else {
+                const row = trainerList.insertRow();
+                const cell = row.insertCell();
+                cell.textContent = '登録されているトレーナーはいません。';
+                cell.colSpan = 3; // 列数に合わせて調整
+                cell.style.textAlign = 'center';
+                cell.style.fontStyle = 'italic';
+            }
+        } catch(e) {
+            logToServer('displayTrainerList: ★★★ エラー発生 ★★★ - ' + e.toString());
+            console.error("displayTrainerList error:", e);
+            showMessage('トレーナーリストの表示中にエラーが発生しました。', 'error');
+        }
         logToServer('displayTrainerList: 完了');
     }
-    function deleteTrainer(trainerName, storeName) { /* ... */ }
-    function handleTrainerFormSubmit(event) { /* ... */ }
+
+    function deleteTrainer(trainerName, storeName) {
+        logToServer('deleteTrainer: 開始 - trainerName=' + trainerName + ', storeName=' + storeName);
+        if (!trainerName || !storeName) {
+            showMessage('削除するトレーナーの情報が不足しています。', 'error');
+            return;
+        }
+        if (confirm('トレーナー「' + trainerName + ' (' + storeName + ')」を削除してもよろしいですか？')) {
+            google.script.run
+                .withSuccessHandler(function(result) {
+                    logToServer('deleteTrainer: SuccessHandler result: ' + JSON.stringify(result));
+                    if (result.success) {
+                        showMessage(result.message || 'トレーナーが削除されました。', 'success');
+                        loadTrainers(); // リストを再読み込み
+                    } else {
+                        showMessage(result.message || 'トレーナーの削除に失敗しました。', 'error');
+                    }
+                })
+                .withFailureHandler(function(error) {
+                    logToServer('deleteTrainer: FailureHandler error: ' + error.toString());
+                    showMessage('トレーナーの削除中にエラーが発生しました: ' + error, 'error');
+                })
+                .deleteTrainer(trainerName, storeName); // AdminHandler.js
+        } else {
+            logToServer('deleteTrainer: 削除キャンセル');
+        }
+    }
+
     // TODO: editTrainer, resetTrainerForm, setupTrainerCancelButton
-  
+
+    function handleTrainerFormSubmit(event) {
+        event.preventDefault();
+        logToServer('handleTrainerFormSubmit: 開始');
+        const trainerNameInput = document.getElementById('trainer-name');
+        const storeSelect = document.getElementById('trainer-store');
+        const trainerName = trainerNameInput.value.trim();
+        const storeName = storeSelect.value;
+
+        if (!trainerName) {
+            showMessage('トレーナー名を入力してください。', 'error'); return;
+        }
+        if (!storeName) {
+            showMessage('所属店舗を選択してください。', 'error'); return;
+        }
+
+        const submitBtn = document.getElementById('trainer-submit-btn'); // ★ ID要確認
+        submitBtn.disabled = true;
+        submitBtn.textContent = '処理中...';
+
+        // TODO: 編集モードの判定を追加
+        const isEditing = false; // 仮
+
+        let serverFunction;
+        let args;
+        if (isEditing) {
+            // serverFunction = 'updateTrainer';
+            // args = [originalName, originalStore, trainerName, storeName];
+            logToServer('handleTrainerFormSubmit: 編集モード (未実装)');
+            showMessage('トレーナー編集機能は現在利用できません。', 'error'); // 仮
+            submitBtn.disabled = false; submitBtn.textContent = '追加'; // 仮
+            return; // ★ 編集処理未実装のため中断
+        } else {
+            serverFunction = 'addTrainer'; // AdminHandler.js
+            args = [trainerName, storeName];
+            logToServer('handleTrainerFormSubmit: 追加モード - name=' + trainerName + ', store=' + storeName);
+        }
+
+        google.script.run
+            .withSuccessHandler(function(result) {
+                logToServer('handleTrainerFormSubmit: SuccessHandler result: ' + JSON.stringify(result));
+                if (result.success) {
+                    showMessage(result.message || 'トレーナーが追加されました。', 'success');
+                    document.getElementById('trainer-form').reset(); // フォームリセット
+                    loadTrainers(); // リスト再読み込み
+                } else {
+                    showMessage(result.message || 'トレーナーの追加に失敗しました。', 'error');
+                }
+                 submitBtn.disabled = false; submitBtn.textContent = '追加';
+            })
+            .withFailureHandler(function(error) {
+                logToServer('handleTrainerFormSubmit: FailureHandler error: ' + error.toString());
+                showMessage('トレーナーの追加中にエラーが発生しました: ' + error, 'error');
+                submitBtn.disabled = false; submitBtn.textContent = '追加';
+            })
+            [serverFunction].apply(null, args);
+    }
+
     // ==================================
     // --- 技術カテゴリー管理関数 ---
     // ==================================
-     // ★★★ loadTechCategories, displayCategoryList, updateCategorySelect にも同様のログと try-catch を追加 ★★★
     function loadTechCategories() {
        logToServer('loadTechCategories: 関数開始');
        google.script.run.withSuccessHandler(function(result){
-          logToServer('loadTechCategories: SuccessHandler 開始, success=' + result?.success);
+          // ★ 詳細なログを追加
+          logToServer('loadTechCategories: SuccessHandler result: ' + JSON.stringify(result));
+           logToServer('loadTechCategories: SuccessHandler 開始, success=' + result?.success);
            try {
                if(result.success){
                    logToServer('loadTechCategories: displayCategoryList 呼び出し前');
@@ -245,107 +838,542 @@
                    logToServer('loadTechCategories: updateCategorySelect 呼び出し前');
                    updateCategorySelect(result.data);
                    logToServer('loadTechCategories: SuccessHandler 完了');
-               } else { /*...*/ }
-           } catch(e) { /*...*/ }
-       }).withFailureHandler(function(error){/*...*/}).getAllTechCategories();
+               } else {
+                   logToServer('loadTechCategories: SuccessHandler 失敗 - ' + result.message);
+                   showMessage(result.message || '技術カテゴリー情報の取得に失敗しました。', 'error');
+               }
+           } catch(e) {
+               logToServer('loadTechCategories: ★★★ SuccessHandler内でエラー ★★★ - ' + e.toString());
+               console.error("loadTechCategories SuccessHandler error:", e);
+               showMessage('技術カテゴリー情報の表示処理中にエラーが発生しました。', 'error');
+           }
+       }).withFailureHandler(function(error){
+            // ★ 詳細なログを追加
+            logToServer('loadTechCategories: FailureHandler error: ' + error.toString() + ' | ' + JSON.stringify(error));
+            logToServer('loadTechCategories: FailureHandler 発生 - ' + error.toString());
+            showMessage('技術カテゴリー情報の取得中にエラーが発生しました: ' + error, 'error');
+       }).getAllTechCategories(); // AdminHandler.js
        logToServer('loadTechCategories: google.script.run 呼び出し完了');
     }
+
     function displayCategoryList(categories) {
+        // ★ 詳細なログを追加
+        logToServer('displayCategoryList: 開始, targetElement=' + (document.getElementById('category-list')?.querySelector('tbody') ? '取得成功' : '取得失敗') + ', data=' + JSON.stringify(categories));
         logToServer('displayCategoryList: 開始, 件数=' + (categories ? categories.length : 0));
         try{
             const categoryList = document.getElementById('category-list')?.querySelector('tbody');
-             if (!categoryList) { /*...*/ return; }
+             if (!categoryList) {
+                 logToServer('displayCategoryList: ★★★ エラー: category-list tbody が見つかりません ★★★');
+                 console.error("Element '#category-list tbody' not found!");
+                 showMessage('技術カテゴリーリストの表示エリアが見つかりません。', 'error');
+                 return;
+             }
              categoryList.innerHTML = '';
              if(categories && categories.length > 0) {
-                  categories.forEach(function(category) { /* ... 行作成 (編集ボタンTODO) ... */ });
-             } else { /* ... データなし表示 ... */ }
-        } catch(e) { /*...*/ }
+                  categories.forEach(function(category) { // ★ getAllTechCategories が返すデータ構造に合わせる (想定: {name: string, roles: string}[])
+                     const row = categoryList.insertRow();
+                     row.insertCell().textContent = category.name;
+                     row.insertCell().textContent = category.roles; // 対象役職 (カンマ区切り文字列想定)
+
+                     const actionsCell = row.insertCell();
+                     // ★ TODO: 編集ボタンを追加
+                     const editButton = document.createElement('button');
+                     editButton.textContent = '編集';
+                     editButton.classList.add('btn', 'btn-small', 'hidden'); // ★ 現状は非表示
+                     // editButton.onclick = function() { editTechCategory(category.name); };
+                     actionsCell.appendChild(editButton);
+
+                     // ★ 削除ボタンも追加
+                     const deleteButton = document.createElement('button');
+                     deleteButton.textContent = '削除';
+                     deleteButton.classList.add('btn', 'btn-small', 'btn-danger');
+                     deleteButton.style.marginLeft = '5px';
+                     deleteButton.onclick = function() { deleteTechCategory(category.name); };
+                     actionsCell.appendChild(deleteButton);
+                  });
+             } else {
+                 const row = categoryList.insertRow();
+                 const cell = row.insertCell();
+                 cell.textContent = '登録されている技術カテゴリーはありません。';
+                 cell.colSpan = 3; // 列数に合わせて調整
+                 cell.style.textAlign = 'center';
+                 cell.style.fontStyle = 'italic';
+             }
+        } catch(e) {
+            logToServer('displayCategoryList: ★★★ エラー発生 ★★★ - ' + e.toString());
+            console.error("displayCategoryList error:", e);
+            showMessage('技術カテゴリーリストの表示中にエラーが発生しました。', 'error');
+        }
         logToServer('displayCategoryList: 完了');
     }
+
     function updateCategorySelect(categories) {
+         // ★ 詳細なログを追加
+         logToServer('updateCategorySelect: 開始, targetElement=' + (document.getElementById('detail-category') ? '取得成功' : '取得失敗') + ', data=' + JSON.stringify(categories));
          logToServer('updateCategorySelect: 開始');
          try {
-              const detailCategory = document.getElementById('detail-category');
-              if (!detailCategory) { /*...*/ return; }
-              // ... オプション更新処理 ...
-         } catch(e) { /*...*/ }
+              const detailCategorySelect = document.getElementById('detail-category');
+              if (!detailCategorySelect) {
+                  logToServer('updateCategorySelect: ★★★ エラー: detail-category Select要素が見つかりません ★★★');
+                  return;
+              }
+              // 既存のオプションをクリア (最初の「選択してください」を除く)
+              while (detailCategorySelect.options.length > 1) {
+                  detailCategorySelect.remove(1);
+              }
+              // 新しいオプションを追加
+              if (categories && categories.length > 0) {
+                  categories.forEach(category => { // categories は {name: string, roles: string}[] 想定
+                      const option = document.createElement('option');
+                      option.value = category.name;
+                      option.textContent = category.name;
+                      detailCategorySelect.appendChild(option);
+                  });
+              }
+         } catch(e) {
+             logToServer('updateCategorySelect: ★★★ エラー発生 ★★★ - ' + e.toString());
+             console.error("updateCategorySelect error:", e);
+             showMessage('カテゴリー選択肢の更新中にエラーが発生しました。', 'error');
+         }
          logToServer('updateCategorySelect: 完了');
      }
-    function deleteTechCategory(categoryName) { /* ... */ }
-    function handleCategoryFormSubmit(event) { /* ... */ }
-     // TODO: editTechCategory, resetCategoryForm, setupCategoryCancelButton
-  
+
+    function deleteTechCategory(categoryName) {
+        logToServer('deleteTechCategory: 開始 - categoryName=' + categoryName);
+        if (!categoryName) {
+            showMessage('削除するカテゴリーが指定されていません。', 'error');
+            return;
+        }
+        if (confirm('技術カテゴリー「' + categoryName + '」を削除してもよろしいですか？\n関連する詳細技術項目も削除される可能性があります。')) {
+            google.script.run
+                .withSuccessHandler(function(result) {
+                    logToServer('deleteTechCategory: SuccessHandler result: ' + JSON.stringify(result));
+                    if (result.success) {
+                        showMessage(result.message || '技術カテゴリーが削除されました。', 'success');
+                        loadTechCategories(); // カテゴリーリストと選択肢を再読み込み
+                        loadTechDetails(); // 詳細項目リストも再読み込み（影響を受けるため）
+                    } else {
+                        showMessage(result.message || '技術カテゴリーの削除に失敗しました。', 'error');
+                    }
+                })
+                .withFailureHandler(function(error) {
+                    logToServer('deleteTechCategory: FailureHandler error: ' + error.toString());
+                    showMessage('技術カテゴリーの削除中にエラーが発生しました: ' + error, 'error');
+                })
+                .deleteTechCategory(categoryName); // AdminHandler.js
+        } else {
+            logToServer('deleteTechCategory: 削除キャンセル');
+        }
+    }
+
+    // TODO: editTechCategory, resetCategoryForm, setupCategoryCancelButton
+
+    function handleCategoryFormSubmit(event) {
+        event.preventDefault();
+        logToServer('handleCategoryFormSubmit: 開始');
+        const categoryNameInput = document.getElementById('category-name');
+        const categoryName = categoryNameInput.value.trim();
+        const rolesCheckboxes = document.querySelectorAll('#category-roles-checkboxes input[name="categoryRoles"]:checked');
+        const allRolesCheckbox = document.getElementById('category-all-roles');
+        let selectedRoles = [];
+
+        if (!categoryName) {
+            showMessage('カテゴリー名を入力してください。', 'error'); return;
+        }
+
+        if (allRolesCheckbox.checked) {
+            selectedRoles = ['全て'];
+        } else {
+            rolesCheckboxes.forEach(cb => selectedRoles.push(cb.value));
+            if (selectedRoles.length === 0) {
+                showMessage('対象役職を1つ以上選択するか、「全ての役職」をチェックしてください。', 'error'); return;
+            }
+        }
+        const rolesString = selectedRoles.join(',');
+
+        const submitBtn = document.getElementById('category-submit-btn'); // ★ ID要確認
+        submitBtn.disabled = true;
+        submitBtn.textContent = '処理中...';
+
+        // TODO: 編集モードの判定を追加
+        const isEditing = false; // 仮
+
+        let serverFunction;
+        let args;
+        if (isEditing) {
+            // serverFunction = 'updateTechCategory';
+            // args = [originalName, categoryName, rolesString];
+            logToServer('handleCategoryFormSubmit: 編集モード (未実装)');
+            showMessage('カテゴリー編集機能は現在利用できません。', 'error'); // 仮
+            submitBtn.disabled = false; submitBtn.textContent = '追加'; // 仮
+            return; // ★ 編集処理未実装のため中断
+        } else {
+            serverFunction = 'addTechCategory'; // AdminHandler.js
+            args = [categoryName, rolesString];
+            logToServer('handleCategoryFormSubmit: 追加モード - name=' + categoryName + ', roles=' + rolesString);
+        }
+
+        google.script.run
+            .withSuccessHandler(function(result) {
+                logToServer('handleCategoryFormSubmit: SuccessHandler result: ' + JSON.stringify(result));
+                if (result.success) {
+                    showMessage(result.message || '技術カテゴリーが追加されました。', 'success');
+                    document.getElementById('category-form').reset(); // フォームリセット
+                    // チェックボックスのリセット（reset()だけでは不十分な場合）
+                    document.querySelectorAll('#category-roles-checkboxes input[type="checkbox"]').forEach(cb => cb.checked = false);
+                    loadTechCategories(); // リストと選択肢を再読み込み
+                } else {
+                    showMessage(result.message || '技術カテゴリーの追加に失敗しました。', 'error');
+                }
+                submitBtn.disabled = false; submitBtn.textContent = '追加';
+            })
+            .withFailureHandler(function(error) {
+                logToServer('handleCategoryFormSubmit: FailureHandler error: ' + error.toString());
+                showMessage('技術カテゴリーの追加中にエラーが発生しました: ' + error, 'error');
+                submitBtn.disabled = false; submitBtn.textContent = '追加';
+            })
+            [serverFunction].apply(null, args);
+    }
+
     // ==================================
     // --- 詳細技術項目管理関数 ---
     // ==================================
-     // ★★★ loadTechDetails, displayDetailList にも同様のログと try-catch を追加 ★★★
     function loadTechDetails() {
        logToServer('loadTechDetails: 関数開始');
        google.script.run.withSuccessHandler(function(result){
+           // ★ 詳細なログを追加
+           logToServer('loadTechDetails: SuccessHandler result: ' + JSON.stringify(result));
            logToServer('loadTechDetails: SuccessHandler 開始, success=' + result?.success);
             try {
                if(result.success){
                    logToServer('loadTechDetails: displayDetailList 呼び出し前');
                    displayDetailList(result.data);
                    logToServer('loadTechDetails: SuccessHandler 完了');
-               } else { /*...*/ }
-           } catch(e) { /*...*/ }
-       }).withFailureHandler(function(error){/*...*/}).getAllTechDetails();
+               } else {
+                   logToServer('loadTechDetails: SuccessHandler 失敗 - ' + result.message);
+                   showMessage(result.message || '詳細技術項目情報の取得に失敗しました。', 'error');
+               }
+           } catch(e) {
+               logToServer('loadTechDetails: ★★★ SuccessHandler内でエラー ★★★ - ' + e.toString());
+               console.error("loadTechDetails SuccessHandler error:", e);
+               showMessage('詳細技術項目情報の表示処理中にエラーが発生しました。', 'error');
+           }
+       }).withFailureHandler(function(error){
+            // ★ 詳細なログを追加
+            logToServer('loadTechDetails: FailureHandler error: ' + error.toString() + ' | ' + JSON.stringify(error));
+            logToServer('loadTechDetails: FailureHandler 発生 - ' + error.toString());
+            showMessage('詳細技術項目情報の取得中にエラーが発生しました: ' + error, 'error');
+       }).getAllTechDetails(); // AdminHandler.js
         logToServer('loadTechDetails: google.script.run 呼び出し完了');
     }
+
     function displayDetailList(details) {
+        // ★ 詳細なログを追加
+        logToServer('displayDetailList: 開始, targetElement=' + (document.getElementById('detail-list')?.querySelector('tbody') ? '取得成功' : '取得失敗') + ', data=' + JSON.stringify(details));
         logToServer('displayDetailList: 開始, 件数=' + (details ? details.length : 0));
          try{
              const detailList = document.getElementById('detail-list')?.querySelector('tbody');
-              if (!detailList) { /*...*/ return; }
+              if (!detailList) {
+                  logToServer('displayDetailList: ★★★ エラー: detail-list tbody が見つかりません ★★★');
+                  console.error("Element '#detail-list tbody' not found!");
+                  showMessage('詳細技術項目リストの表示エリアが見つかりません。', 'error');
+                  return;
+              }
               detailList.innerHTML = '';
               if(details && details.length > 0) {
-                   details.forEach(function(detail) { /* ... 行作成 (編集ボタンTODO) ... */ });
-              } else { /* ... データなし表示 ... */ }
-         } catch(e) { /*...*/ }
+                   details.forEach(function(detail) { // ★ getAllTechDetails が返すデータ構造に合わせる (想定: {name: string, category: string, roles: string}[])
+                      const row = detailList.insertRow();
+                      row.insertCell().textContent = detail.name;
+                      row.insertCell().textContent = detail.category;
+                      row.insertCell().textContent = detail.roles; // 対象役職
+
+                      const actionsCell = row.insertCell();
+                      // ★ TODO: 編集ボタンを追加
+                      const editButton = document.createElement('button');
+                      editButton.textContent = '編集';
+                      editButton.classList.add('btn', 'btn-small', 'hidden'); // ★ 現状は非表示
+                      // editButton.onclick = function() { editTechDetail(detail.name, detail.category); };
+                      actionsCell.appendChild(editButton);
+
+                      // ★ 削除ボタンも追加
+                      const deleteButton = document.createElement('button');
+                      deleteButton.textContent = '削除';
+                      deleteButton.classList.add('btn', 'btn-small', 'btn-danger');
+                      deleteButton.style.marginLeft = '5px';
+                      deleteButton.onclick = function() { deleteTechDetail(detail.name, detail.category); };
+                      actionsCell.appendChild(deleteButton);
+                   });
+              } else {
+                  const row = detailList.insertRow();
+                  const cell = row.insertCell();
+                  cell.textContent = '登録されている詳細技術項目はありません。';
+                  cell.colSpan = 4; // 列数に合わせて調整
+                  cell.style.textAlign = 'center';
+                  cell.style.fontStyle = 'italic';
+              }
+         } catch(e) {
+             logToServer('displayDetailList: ★★★ エラー発生 ★★★ - ' + e.toString());
+             console.error("displayDetailList error:", e);
+             showMessage('詳細技術項目リストの表示中にエラーが発生しました。', 'error');
+         }
          logToServer('displayDetailList: 完了');
      }
-    function deleteTechDetail(detailName, categoryName) { /* ... */ }
-    function handleDetailFormSubmit(event) { /* ... */ }
-     // TODO: editTechDetail, resetDetailForm, setupDetailCancelButton
-    
+
+    function deleteTechDetail(detailName, categoryName) {
+        logToServer('deleteTechDetail: 開始 - detailName=' + detailName + ', categoryName=' + categoryName);
+        if (!detailName || !categoryName) {
+            showMessage('削除する詳細項目の情報が不足しています。', 'error');
+            return;
+        }
+        if (confirm('詳細技術項目「' + detailName + ' (' + categoryName + ')」を削除してもよろしいですか？')) {
+            google.script.run
+                .withSuccessHandler(function(result) {
+                    logToServer('deleteTechDetail: SuccessHandler result: ' + JSON.stringify(result));
+                    if (result.success) {
+                        showMessage(result.message || '詳細技術項目が削除されました。', 'success');
+                        loadTechDetails(); // リストを再読み込み
+                    } else {
+                        showMessage(result.message || '詳細技術項目の削除に失敗しました。', 'error');
+                    }
+                })
+                .withFailureHandler(function(error) {
+                    logToServer('deleteTechDetail: FailureHandler error: ' + error.toString());
+                    showMessage('詳細技術項目の削除中にエラーが発生しました: ' + error, 'error');
+                })
+                .deleteTechDetail(detailName, categoryName); // AdminHandler.js
+        } else {
+            logToServer('deleteTechDetail: 削除キャンセル');
+        }
+    }
+
+    // TODO: editTechDetail, resetDetailForm, setupDetailCancelButton
+
+    function handleDetailFormSubmit(event) {
+        event.preventDefault();
+        logToServer('handleDetailFormSubmit: 開始');
+        const detailNameInput = document.getElementById('detail-name');
+        const categorySelect = document.getElementById('detail-category');
+        const detailName = detailNameInput.value.trim();
+        const categoryName = categorySelect.value;
+        const rolesCheckboxes = document.querySelectorAll('#detail-roles-checkboxes input[name="detailRoles"]:checked');
+        const allRolesCheckbox = document.getElementById('detail-all-roles');
+        let selectedRoles = [];
+
+        if (!detailName) {
+            showMessage('項目名を入力してください。', 'error'); return;
+        }
+        if (!categoryName) {
+            showMessage('カテゴリーを選択してください。', 'error'); return;
+        }
+
+        if (allRolesCheckbox.checked) {
+            selectedRoles = ['全て'];
+        } else {
+            rolesCheckboxes.forEach(cb => selectedRoles.push(cb.value));
+            if (selectedRoles.length === 0) {
+                showMessage('対象役職を1つ以上選択するか、「全ての役職」をチェックしてください。', 'error'); return;
+            }
+        }
+        const rolesString = selectedRoles.join(',');
+
+        const submitBtn = document.getElementById('detail-submit-btn'); // ★ ID要確認
+        submitBtn.disabled = true;
+        submitBtn.textContent = '処理中...';
+
+        // TODO: 編集モードの判定を追加
+        const isEditing = false; // 仮
+
+        let serverFunction;
+        let args;
+        if (isEditing) {
+            // serverFunction = 'updateTechDetail';
+            // args = [originalName, originalCategory, detailName, categoryName, rolesString];
+            logToServer('handleDetailFormSubmit: 編集モード (未実装)');
+            showMessage('詳細項目編集機能は現在利用できません。', 'error'); // 仮
+            submitBtn.disabled = false; submitBtn.textContent = '追加'; // 仮
+            return; // ★ 編集処理未実装のため中断
+        } else {
+            serverFunction = 'addTechDetail'; // AdminHandler.js
+            args = [detailName, categoryName, rolesString];
+            logToServer('handleDetailFormSubmit: 追加モード - name=' + detailName + ', category=' + categoryName + ', roles=' + rolesString);
+        }
+
+        google.script.run
+            .withSuccessHandler(function(result) {
+                logToServer('handleDetailFormSubmit: SuccessHandler result: ' + JSON.stringify(result));
+                if (result.success) {
+                    showMessage(result.message || '詳細技術項目が追加されました。', 'success');
+                    document.getElementById('detail-form').reset(); // フォームリセット
+                     // チェックボックスのリセット
+                    document.querySelectorAll('#detail-roles-checkboxes input[type="checkbox"]').forEach(cb => cb.checked = false);
+                    loadTechDetails(); // リスト再読み込み
+                } else {
+                    showMessage(result.message || '詳細技術項目の追加に失敗しました。', 'error');
+                }
+                submitBtn.disabled = false; submitBtn.textContent = '追加';
+            })
+            .withFailureHandler(function(error) {
+                logToServer('handleDetailFormSubmit: FailureHandler error: ' + error.toString());
+                showMessage('詳細技術項目の追加中にエラーが発生しました: ' + error, 'error');
+                 submitBtn.disabled = false; submitBtn.textContent = '追加';
+            })
+            [serverFunction].apply(null, args);
+    }
+
     // ==================================
     // --- ウィッグ在庫管理関数 ---
     // ==================================
-     // ★★★ loadInventory, displayInventoryList にも同様のログと try-catch を追加 ★★★
     function loadInventory() {
         logToServer('loadInventory: 関数開始');
         google.script.run.withSuccessHandler(function(result){
+            // ★ 詳細なログを追加
+            logToServer('loadInventory: SuccessHandler result: ' + JSON.stringify(result));
             logToServer('loadInventory: SuccessHandler 開始, success=' + result?.success);
              try {
                 if(result.success){
                     logToServer('loadInventory: displayInventoryList 呼び出し前');
                     displayInventoryList(result.data);
                     logToServer('loadInventory: SuccessHandler 完了');
-                } else { /*...*/ }
-            } catch(e) { /*...*/ }
-        }).withFailureHandler(function(error){/*...*/}).getWigInventory();
+                } else {
+                    logToServer('loadInventory: SuccessHandler 失敗 - ' + result.message);
+                    showMessage(result.message || '在庫情報の取得に失敗しました。', 'error');
+                }
+            } catch(e) {
+                logToServer('loadInventory: ★★★ SuccessHandler内でエラー ★★★ - ' + e.toString());
+                console.error("loadInventory SuccessHandler error:", e);
+                showMessage('在庫情報の表示処理中にエラーが発生しました。', 'error');
+            }
+        }).withFailureHandler(function(error){
+            // ★ 詳細なログを追加
+            logToServer('loadInventory: FailureHandler error: ' + error.toString() + ' | ' + JSON.stringify(error));
+            logToServer('loadInventory: FailureHandler 発生 - ' + error.toString());
+            showMessage('在庫情報の取得中にエラーが発生しました: ' + error, 'error');
+        }).getWigInventory(); // DataAccess.js (AdminHandler.js に移すか検討)
          logToServer('loadInventory: google.script.run 呼び出し完了');
      }
+
     function displayInventoryList(inventory) {
+         // ★ 詳細なログを追加
+         logToServer('displayInventoryList: 開始, targetElement=' + (document.getElementById('inventory-list')?.querySelector('tbody') ? '取得成功' : '取得失敗') + ', data=' + JSON.stringify(inventory));
          logToServer('displayInventoryList: 開始, 件数=' + (inventory ? inventory.length : 0));
           try{
               const inventoryList = document.getElementById('inventory-list')?.querySelector('tbody');
-               if (!inventoryList) { /*...*/ return; }
+               if (!inventoryList) {
+                   logToServer('displayInventoryList: ★★★ エラー: inventory-list tbody が見つかりません ★★★');
+                   console.error("Element '#inventory-list tbody' not found!");
+                   showMessage('在庫リストの表示エリアが見つかりません。', 'error');
+                   return;
+               }
                inventoryList.innerHTML = '';
                if(inventory && inventory.length > 0) {
-                    inventory.forEach(function(item) { /* ... 行作成 ... */ });
-               } else { /* ... データなし表示 ... */ }
-          } catch(e) { /*...*/ }
+                    inventory.forEach(function(item) { // ★ getWigInventory が返すデータ構造に合わせる (想定: {store: string, stock: number|string}[])
+                       const row = inventoryList.insertRow();
+                       row.insertCell().textContent = item.store;
+                       const stockCell = row.insertCell();
+                       stockCell.textContent = item.stock; // 在庫数
+                       // 在庫数が数値でない場合は警告スタイルを適用（任意）
+                       if (isNaN(Number(item.stock))) {
+                           stockCell.style.color = 'red';
+                           stockCell.style.fontWeight = 'bold';
+                           stockCell.title = '在庫数が数値ではありません。';
+                       }
+                       // ★ 在庫には編集・削除ボタンは不要
+                    });
+               } else {
+                   const row = inventoryList.insertRow();
+                   const cell = row.insertCell();
+                   cell.textContent = '在庫情報がありません。';
+                   cell.colSpan = 2; // 列数に合わせて調整
+                   cell.style.textAlign = 'center';
+                   cell.style.fontStyle = 'italic';
+               }
+          } catch(e) {
+              logToServer('displayInventoryList: ★★★ エラー発生 ★★★ - ' + e.toString());
+              console.error("displayInventoryList error:", e);
+              showMessage('在庫リストの表示中にエラーが発生しました。', 'error');
+          }
           logToServer('displayInventoryList: 完了');
       }
-    function handleInventoryFormSubmit(event) { /* ... (変更なし) ... */ }
-    
+
+    function handleInventoryFormSubmit(event) {
+        event.preventDefault();
+        logToServer('handleInventoryFormSubmit: 開始');
+        const storeSelect = document.getElementById('inventory-store');
+        const countInput = document.getElementById('inventory-count');
+        const storeName = storeSelect.value;
+        const stockCount = countInput.value; // 文字列で取得
+
+        if (!storeName) {
+            showMessage('店舗を選択してください。', 'error'); return;
+        }
+        if (stockCount === '' || isNaN(Number(stockCount)) || Number(stockCount) < 0) {
+            showMessage('在庫数には0以上の数値を入力してください。', 'error'); return;
+        }
+        const stockCountNumber = Number(stockCount);
+
+        const submitBtn = event.target.querySelector('button[type="submit"]'); // フォーム内の送信ボタンを取得
+        if(!submitBtn) { logToServer('handleInventoryFormSubmit: 送信ボタンが見つかりません'); return; }
+
+        submitBtn.disabled = true;
+        submitBtn.textContent = '更新中...';
+
+        logToServer('handleInventoryFormSubmit: 更新実行 - store=' + storeName + ', count=' + stockCountNumber);
+
+        google.script.run
+            .withSuccessHandler(function(result) {
+                logToServer('handleInventoryFormSubmit: SuccessHandler result: ' + JSON.stringify(result));
+                if (result.success) {
+                    showMessage(result.message || '在庫数が更新されました。', 'success');
+                    document.getElementById('inventory-form').reset(); // フォームリセット
+                    loadInventory(); // リスト再読み込み
+                } else {
+                    showMessage(result.message || '在庫数の更新に失敗しました。', 'error');
+                }
+                submitBtn.disabled = false; submitBtn.textContent = '更新';
+            })
+            .withFailureHandler(function(error) {
+                logToServer('handleInventoryFormSubmit: FailureHandler error: ' + error.toString());
+                showMessage('在庫数の更新中にエラーが発生しました: ' + error, 'error');
+                submitBtn.disabled = false; submitBtn.textContent = '更新';
+            })
+            .updateWigStock(storeName, stockCountNumber); // AdminHandler.js
+    }
+
     // ==================================
     // --- 共通関数 ---
     // ==================================
-    function showMessage(message, type) { /* ... (変更なし) ... */ }
-    function logToServer(message) { /* ... (変更なし) ... */ }
-  
+    function showMessage(message, type) {
+      const messageElement = document.getElementById('admin-message'); // ★ 管理者画面のメッセージID
+      if (!messageElement) {
+          console.error("Message element #admin-message not found!");
+          logToServer('showMessage: ★★★ エラー: #admin-message が見つかりません ★★★');
+          alert((type === 'error' ? 'エラー: ' : '') + message); // fallback
+          return;
+      }
+
+      messageElement.textContent = message;
+      messageElement.className = 'message ' + type; // 'success' or 'error'
+      messageElement.style.display = 'block'; // 表示
+
+      // 成功メッセージは5秒後に消す
+      if (type === 'success') {
+        setTimeout(() => {
+            if (messageElement.textContent === message) { // 他のメッセージで上書きされていないか確認
+               messageElement.textContent = '';
+               messageElement.style.display = 'none'; // 非表示
+            }
+        }, 5000);
+      }
+      // エラーメッセージは消さない (手動リロードなどで消える想定)
+    }
+
+    function logToServer(message) {
+        // console.log("[Admin Client Log]", message); // ブラウザコンソールにも出す場合
+        google.script.run
+            // .withSuccessHandler(() => {}) // ログ出力の成否ハンドリングは基本不要
+            // .withFailureHandler(err => console.error("logToServer failed:", err))
+            .logMessage("[Admin] " + message); // Utils.js の関数を呼び出し (Prefix追加)
+    }
+
   });
   </script>
