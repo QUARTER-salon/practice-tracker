@@ -825,6 +825,24 @@
             [serverFunction].apply(null, args);
     }
 
+function editTrainer(name, store) {
+    logToServer(`editTrainer: 開始 - name=${name}, store=${store}`);
+    try { // エラーハンドリング追加
+        document.getElementById('trainer-form-title').textContent = 'トレーナー編集';
+        document.getElementById('trainer-name').value = name;
+        document.getElementById('trainer-store').value = store; // 店舗を選択状態にする
+        document.getElementById('trainer-edit-original-name').value = name; // 元の名前を保持
+        document.getElementById('trainer-edit-original-store').value = store; // 元の店舗を保持
+        document.getElementById('trainer-submit-btn').textContent = '更新';
+        document.getElementById('trainer-cancel-btn').classList.remove('hidden');
+        document.getElementById('trainer-name').focus();
+    } catch (e) {
+         logToServer(`editTrainer: エラー - ${e.toString()}`);
+         console.error("editTrainer error:", e);
+         showMessage('トレーナー編集フォームの設定中にエラーが発生しました。', 'error');
+    }
+}
+
     // ==================================
     // --- 技術カテゴリー管理関数 ---
     // ==================================
@@ -1038,6 +1056,46 @@
             [serverFunction].apply(null, args);
     }
 
+function editTechCategory(name, rolesString) {
+    logToServer(`editTechCategory: 開始 - name=${name}, roles=${rolesString}`);
+    try { // エラーハンドリング追加
+        document.getElementById('category-form-title').textContent = 'カテゴリー編集';
+        document.getElementById('category-name').value = name;
+        document.getElementById('category-edit-original-name').value = name; // 元の名前を保持
+
+        // チェックボックスの状態を設定
+        const allRolesCheckbox = document.getElementById('category-all-roles');
+        const rolesCheckboxes = document.querySelectorAll('#category-roles-checkboxes input[name="categoryRoles"]');
+
+        if (!allRolesCheckbox || !rolesCheckboxes) {
+             logToServer('editTechCategory: 役職チェックボックス要素が見つかりません。');
+             showMessage('役職選択欄の読み込みに問題があります。', 'error');
+             return;
+        }
+
+        allRolesCheckbox.checked = false; // 一旦リセット
+        rolesCheckboxes.forEach(cb => cb.checked = false); // 一旦リセット
+
+        if (rolesString === '全て') {
+            allRolesCheckbox.checked = true;
+        } else {
+            const rolesArray = rolesString.split(',').map(r => r.trim());
+            rolesCheckboxes.forEach(cb => {
+                if (rolesArray.includes(cb.value)) {
+                    cb.checked = true;
+                }
+            });
+        }
+
+        document.getElementById('category-submit-btn').textContent = '更新';
+        document.getElementById('category-cancel-btn').classList.remove('hidden');
+        document.getElementById('category-name').focus();
+    } catch (e) {
+        logToServer(`editTechCategory: エラー - ${e.toString()}`);
+        console.error("editTechCategory error:", e);
+        showMessage('カテゴリー編集フォームの設定中にエラーが発生しました。', 'error');
+    }
+}
     // ==================================
     // --- 詳細技術項目管理関数 ---
     // ==================================
@@ -1221,6 +1279,49 @@
             })
             [serverFunction].apply(null, args);
     }
+
+ function editTechDetail(name, category, rolesString) {
+    logToServer(`editTechDetail: 開始 - name=${name}, category=${category}, roles=${rolesString}`);
+    try { // エラーハンドリング追加
+        document.getElementById('detail-form-title').textContent = '詳細項目編集';
+        document.getElementById('detail-name').value = name;
+        document.getElementById('detail-category').value = category;
+        document.getElementById('detail-edit-original-name').value = name; // 元の名前を保持
+        document.getElementById('detail-edit-original-category').value = category; // 元のカテゴリを保持
+
+        // チェックボックスの状態を設定
+        const allRolesCheckbox = document.getElementById('detail-all-roles');
+        const rolesCheckboxes = document.querySelectorAll('#detail-roles-checkboxes input[name="detailRoles"]');
+
+         if (!allRolesCheckbox || !rolesCheckboxes) {
+             logToServer('editTechDetail: 役職チェックボックス要素が見つかりません。');
+             showMessage('役職選択欄の読み込みに問題があります。', 'error');
+             return;
+        }
+
+        allRolesCheckbox.checked = false; // 一旦リセット
+        rolesCheckboxes.forEach(cb => cb.checked = false); // 一旦リセット
+
+        if (rolesString === '全て') {
+            allRolesCheckbox.checked = true;
+        } else {
+            const rolesArray = rolesString.split(',').map(r => r.trim());
+            rolesCheckboxes.forEach(cb => {
+                if (rolesArray.includes(cb.value)) {
+                    cb.checked = true;
+                }
+            });
+        }
+
+        document.getElementById('detail-submit-btn').textContent = '更新';
+        document.getElementById('detail-cancel-btn').classList.remove('hidden');
+        document.getElementById('detail-name').focus();
+     } catch (e) {
+        logToServer(`editTechDetail: エラー - ${e.toString()}`);
+        console.error("editTechDetail error:", e);
+        showMessage('詳細項目編集フォームの設定中にエラーが発生しました。', 'error');
+     }
+}
 
     // ==================================
     // --- ウィッグ在庫管理関数 ---
