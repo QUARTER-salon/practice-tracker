@@ -15,9 +15,9 @@
         setupStoreCancelButton();
         setupRoleCancelButton();
         // ★ TODO: トレーナー、カテゴリー、詳細のキャンセルボタンリスナーを追加
-        // setupTrainerCancelButton();
-        // setupCategoryCancelButton();
-        // setupDetailCancelButton();
+        setupTrainerCancelButton();
+        setupCategoryCancelButton();
+        setupDetailCancelButton();
         logToServer('admin_script.html: 初期化完了');
     } catch(initError) {
         console.error("初期化エラー:", initError);
@@ -133,7 +133,7 @@
          }
      }
     // ★ TODO: トレーナー、カテゴリー、詳細のキャンセルボタン設定関数を追加
-    /*
+    
     function setupTrainerCancelButton() {
          const cancelButton = document.getElementById('trainer-cancel-btn');
          if (cancelButton) {
@@ -155,7 +155,7 @@
              logToServer('setupDetailCancelButton: リスナー設定完了');
          } else { logToServer('...'); }
     }
-    */
+    
 
     // --- ナビゲーションボタン設定 ---
     function setupNavButtons() {
