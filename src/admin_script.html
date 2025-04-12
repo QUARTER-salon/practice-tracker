@@ -879,8 +879,8 @@
                      // ★ TODO: 編集ボタンを追加
                      const editButton = document.createElement('button');
                      editButton.textContent = '編集';
-                     editButton.classList.add('btn', 'btn-small', 'hidden'); // ★ 現状は非表示
-                     // editButton.onclick = function() { editTechCategory(category.name); };
+                     editButton.classList.add('btn', 'btn-small'); // 'hidden' クラスが付いていないことを確認
+                     editButton.onclick = function() { editTechCategory(category.name, category.roles); }; // onclickイベントを設定
                      actionsCell.appendChild(editButton);
 
                      // ★ 削除ボタンも追加
@@ -1091,10 +1091,9 @@
                       // ★ TODO: 編集ボタンを追加
                       const editButton = document.createElement('button');
                       editButton.textContent = '編集';
-                      editButton.classList.add('btn', 'btn-small', 'hidden'); // ★ 現状は非表示
-                      // editButton.onclick = function() { editTechDetail(detail.name, detail.category); };
+                      editButton.classList.add('btn', 'btn-small'); // 'hidden' クラスが付いていないことを確認
+                      editButton.onclick = function() { editTechDetail(detail.name, detail.category, detail.roles); }; // onclickイベントを設定
                       actionsCell.appendChild(editButton);
-
                       // ★ 削除ボタンも追加
                       const deleteButton = document.createElement('button');
                       deleteButton.textContent = '削除';
